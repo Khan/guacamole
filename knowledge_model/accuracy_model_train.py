@@ -12,7 +12,7 @@ import sys
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-import regression_util
+from train_util import regression_util
 
 # Minimum number of data samples required to fit a model.  Exercises which
 # do not have at least this many problems attempted will not have parameters,
@@ -52,6 +52,8 @@ class FeaturesetFields(object):
 
 
 class Dataset(object):
+    """A class that holds input data and classifications as members.
+    """
     def __init__(self, correct, baseline_prediction, features):
         self.correct = correct
         self.baseline_prediction = baseline_prediction
@@ -59,6 +61,11 @@ class Dataset(object):
 
 
 def roc_curve(correct, prediction_prob):
+    """Generate roc curve data given predictions and outcomes.
+
+    Take a list of actual and predicted accuracies, return a dict
+    with info to generate a roc curve.
+    """
     thresholds = np.arange(-0.01, 1.02, 0.01)
     true_pos = np.zeros(thresholds.shape)
     true_neg = np.zeros(thresholds.shape)
@@ -79,16 +86,29 @@ def roc_curve(correct, prediction_prob):
             "true_neg": true_neg}
 
 
-def print_roc_curve(roc_curve):
-    num_points = len(roc_curve['thresholds'])
+def print_roc_curve(curve):
+    """Print a series of locations on a curve and corresponding thresholds
+
+    Argument:
+        curve:
+            A dictionary of thresholds, true positives, and true negatives
+    """
+    num_points = len(curve['thresholds'])
     for t in range(num_points):
         print "rocline,",  # a known line prefix useful for grepping results
-        print "%s," % roc_curve['thresholds'][t],
-        print "%s," % roc_curve['true_pos'][t],
-        print "%s" % roc_curve['true_neg'][t]
+        print "%s," % curve['thresholds'][t],
+        print "%s," % curve['true_pos'][t],
+        print "%s" % curve['true_neg'][t]
 
 
 def quantile(x, q):
+    """Generate the q'th quantile of x
+    Arguments:
+        x: a numpy array
+        q: the quantile of interest (a float)
+    Returns:
+        the element of x closest to the qth quantile.
+    """
     if len(x.shape) != 1:
         return None
     x = x.tolist()
@@ -96,13 +116,32 @@ def quantile(x, q):
     return x[int((len(x) - 1) * float(q))]
 
 
-def quantiles(x, quantiles):
-    return [quantile(x, q) for q in quantiles]
+def quantiles(x, quantile_intervals):
+    """Generate a series of quantiles
+    Arguments:
+        x:
+            A numpy array of datapoints
+        quantile_intervals:
+            A list of quantiles to calculate
+    Returns:
+        a list in which members of the list are the quantiles of x
+        corresponding to the quantiles in the list q.
+    """
+    return [quantile(x, q) for q in quantile_intervals]
 
 
 def preprocess_data(lines, options):
-    # this step is critical- currently the input is sorted not only on exercise
-    # but also subsequent fields, which could introduce a ton of bias
+    """Shuffle input and transform into a Dataset
+    This step is critical- currently the input is sorted not only on exercise
+    but also subsequent fields, which could introduce a ton of bias
+    Arguments:
+        lines:
+            A list of lines read from an input file
+        options:
+            The options sent in by the user
+    Returns:
+        A training and a test Dataset
+    """
     np.random.shuffle(lines)
 
     idx = FeaturesetFields()
@@ -124,6 +163,7 @@ def preprocess_data(lines, options):
     feature_list = options.feature_list.split(",")
 
     def append_features(slice_obj):
+        """Internal function simplifying slicing and appending features"""
         return np.append(features, lines[:, slice_obj].astype('float'), axis=1)
 
     if 'baseline' in feature_list:
@@ -150,6 +190,8 @@ def preprocess_data(lines, options):
         training_cutoff = N - TEST_SIZE
 
     def dataset(start_index, end_index):
+        """Creates a subset of a dataset for training and testingself.
+        """
         return Dataset(
                 correct[start_index:end_index],
                 baseline_prediction[start_index:end_index],
@@ -162,6 +204,7 @@ def preprocess_data(lines, options):
 
 
 def fit_logistic_log_regression(lines, options):
+    """Wrap a standard logistic regression utility for easy use with data."""
 
     data_train, data_test = preprocess_data(lines, options)
 
@@ -180,6 +223,7 @@ def fit_logistic_log_regression(lines, options):
 
 
 def fit_random_forest(lines, options):
+    """Wrap RandomForestClassifier for easy use with data"""
 
     data_train, data_test = preprocess_data(lines, options)
 
@@ -198,6 +242,10 @@ def fit_random_forest(lines, options):
 
 
 def fit_model(models, model_key, lines, options):
+    """Fit a model using the options specified by the user.
+
+    Modifies the dictionary models sent in as the first argument.
+    """
     print >> sys.stderr, "Model_key " + model_key
     if len(lines) >= MIN_SAMPLES:
 
@@ -258,6 +306,7 @@ def output_models(models, options):
 
 
 def get_cmd_line_options():
+    """Retrieve options that parameterize the model training."""
     parser = optparse.OptionParser()
 
     parser.add_option("-c", "--classifier", default='logistic_log',
@@ -285,6 +334,7 @@ def get_cmd_line_options():
 
 
 def main():
+    """Load arguments, load data, train models, and summarize."""
     options = get_cmd_line_options()
 
     models = {}
@@ -325,4 +375,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

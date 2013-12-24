@@ -28,6 +28,8 @@ import scipy
 import sys
 import warnings
 
+from train_util.regression_util import sigmoid
+
 
 class Parameters(object):
     """
@@ -60,26 +62,6 @@ class Parameters(object):
         """Returns a concatenation of the parameters for saving."""
         return np.concatenate((self.W_correct.ravel(), self.W_time.ravel(),
                                self.sigma_time.ravel()))
-
-
-def sigmoid(X):
-    """Compute the sigmoid function element-wise on X.
-
-    Args:
-        X: An ndarray of any shape.
-
-    Returns:
-        An ndarray of the same shape as X where the elements are the
-        sigmoid of the elements of X.
-    """
-    X[X > 100] = 100
-    X[X < -100] = -100
-    X = np.nan_to_num(X)
-    den = 1. + np.exp(-1. * X)
-    den = np.nan_to_num(den)
-    den[den == 0] = 2
-    d = 1. / den
-    return d
 
 
 def get_exercises_ind(exercise_names, exercise_ind_dict):
@@ -234,10 +216,8 @@ def sample_abilities_diffusion(
         abilities = abilities_init
     # calculate the energy for the initialization state
     E_abilities = 0.5 * np.dot(abilities.T, abilities) + np.sum(
-        conditional_energy_data(abilities, theta,
-            exercises_ind, correct, log_time_taken))
-
-    assert np.isfinite(E_abilities)
+        conditional_energy_data(
+            abilities, theta, exercises_ind, correct, log_time_taken))
 
     sample_chain = []
     for _ in range(num_steps):
@@ -400,6 +380,9 @@ class MirtModel(object):
 
     def get_results(self):
         """Samples the ability vectors for the students in the data"""
+
+        #theta, exercises_ind, correct, log_time_taken):
+        #theta, exercises_ind, correct, log_time_taken, abilities, num_steps)
         if self.pool is None:
             results = [sample_abilities_diffusion(
                         self.theta, self.user_states[ind], self.options, ind)
