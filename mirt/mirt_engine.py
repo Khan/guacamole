@@ -1,11 +1,10 @@
-"""Extends the generic testing engine to support adaptive pretests"""
 import numpy as np
 
-import mirt.engine
-import mirt.mirt_util
+import engine
+import mirt_util
 
 
-class MIRTEngine(mirt.engine.Engine):
+class MIRTEngine(engine.Engine):
 
     # ===== BEGIN: Engine interface implementation =====
     def __init__(self, model_data):
@@ -20,7 +19,7 @@ class MIRTEngine(mirt.engine.Engine):
 
         self.exercise_ind_dict = model_data['exercise_ind_dict']
         num_exercises = len(self.exercise_ind_dict)
-        self.theta = mirt.mirt_util.Parameters(
+        self.theta = mirt_util.Parameters(
             model_data['num_abilities'], num_exercises,
             vals=model_data['theta_flat'])
 
@@ -49,7 +48,7 @@ class MIRTEngine(mirt.engine.Engine):
                 max_info_ex = ex
         ex = max_info_ex
 
-        return mirt.engine.ItemSuggestion(ex)
+        return engine.ItemSuggestion(ex)
 
     def estimated_exercise_accuracies(self, history):
         """Returns a dictionary where the keys are all the exercise names
@@ -69,10 +68,10 @@ class MIRTEngine(mirt.engine.Engine):
         if update_abilities:
             self._update_abilities(history, ignore_analytics=ignore_analytics)
 
-        exercise_ind = mirt.mirt_util.get_exercises_ind(exercise_name,
+        exercise_ind = mirt_util.get_exercises_ind(exercise_name,
                 self.exercise_ind_dict)
 
-        return mirt.mirt_util.conditional_probability_correct(
+        return mirt_util.conditional_probability_correct(
             self.abilities, self.theta, exercise_ind)[0]
 
     def score(self, history):
@@ -125,15 +124,15 @@ class MIRTEngine(mirt.engine.Engine):
             history = [
                 h for h in history if h['metadata'] and
                 not h['metadata'].get('analytics')]
-        ex = lambda h: mirt.engine.ItemResponse(h).exercise
+        ex = lambda h: engine.ItemResponse(h).exercise
         exercises = np.asarray([ex(h) for h in history])
-        exercises_ind = mirt.mirt_util.get_exercises_ind(
+        exercises_ind = mirt_util.get_exercises_ind(
                 exercises, self.exercise_ind_dict)
 
-        is_correct = lambda h: mirt.engine.ItemResponse(h).correct
+        is_correct = lambda h: engine.ItemResponse(h).correct
         correct = np.asarray([is_correct(h) for h in history]).astype(int)
 
-        time_taken = lambda h: mirt.engine.ItemResponse(h).time_taken
+        time_taken = lambda h: engine.ItemResponse(h).time_taken
         time_taken = np.asarray([time_taken(h) for h in history]).astype(float)
         # deal with out of range or bad values for the response time
         time_taken[~np.isfinite(time_taken)] = 1.
@@ -142,7 +141,7 @@ class MIRTEngine(mirt.engine.Engine):
         log_time_taken = np.log(time_taken)
 
         sample_abilities, _, mean_abilities, stdev = (
-                mirt.mirt_util.sample_abilities_diffusion(
+                mirt_util.sample_abilities_diffusion(
                     self.theta, exercises_ind, correct, log_time_taken,
                     self.abilities, num_steps=num_steps))
 

@@ -179,14 +179,14 @@ class Engine(object):
         Move to webapp/assessment/handlers.py, which is where it's called from
         """
         if class_name == "MIRTEngine":
-            import assessment.mirt_engine
-            return assessment.mirt_engine.MIRTEngine
+            import mirt.mirt_engine
+            return mirt.mirt_engine.MIRTEngine
         elif class_name == "SimpleEngine":
-            import assessment.simple_engine
-            return assessment.simple_engine.SimpleEngine
+            import mirt.simple_engine
+            return mirt.simple_engine.SimpleEngine
         elif class_name == "PretestEngine":
-            import assessment.pretest_engine
-            return assessment.pretest_engine.PretestEngine
+            import mirt.pretest_engine
+            return mirt.pretest_engine.PretestEngine
 
         raise UnknownEngineError()
 
