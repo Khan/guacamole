@@ -22,6 +22,7 @@ import multiprocessing
 from multiprocessing import Pool
 import numpy as np
 import optparse
+import re
 import scipy
 import scipy.optimize
 import sys
@@ -39,9 +40,6 @@ except NotImplementedError:
 
 from mirt import mirt_util
 from train_util import model_training_util
-
-# used to index the fields in with a line of text in the input data file
-linesplit = model_training_util.linesplit
 
 # num_exercises and generate_exercise_ind are used in the creation of a
 # defaultdict for mapping exercise names to an unique integer index
@@ -380,6 +378,9 @@ def run(options):
     print >>sys.stderr, "loading data"
     prev_user = None
     attempts = []
+    # used to index the fields in with a line of text in the input data file
+    linesplit = re.compile('[\t,\x01]')
+
     for replica_num in range(options.num_replicas):
         # loop through all the training data, and create user objects
         for line in fileinput.input(options.file):

@@ -1,12 +1,19 @@
+"""Provides an implementation of an engine that can drive an adaptive test.
+This simple implementation is non-adaptive, but mirt_engine.py inherits from
+it.
+"""
+
 import abc
 import datetime
 
 
 class UnknownEngineError(Exception):
+    """Raise when an engine is suggested that has not been implemented"""
     pass
 
 
 class InvalidEngineParamsError(Exception):
+    """Raise when parameters that do not make sense are suggested."""
     pass
 
 

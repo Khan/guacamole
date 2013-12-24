@@ -1,9 +1,9 @@
+"""A variety of simple utilities used by guacamole that may come in
+handy often.
+"""
 import errno
 import os
 import random
-import re
-
-linesplit = re.compile('[\t,\x01]')
 
 
 def sep_into_train_and_test(arguments, test_portion=.1):
@@ -49,7 +49,7 @@ def mkdir_p(paths):
                 raise
 
 
-class FieldIndexer:
+class FieldIndexer(object):
     """Describes the locations of the fields in a variety of data formats.
     Implement your own if you have a csv file you'd like to use features from
     and the fields are not in any of these orders.
@@ -71,8 +71,8 @@ class FieldIndexer:
 
 
 def sequential_problem_numbers(attempts, idx):
-    """Takes all problem logs for a user as a list of lists, indexed by idx,
-    and makes sure that problem numbers within an exercise are strictly
+    """Take all problem logs for a user as a list of lists, indexed by idx,
+    and make sure that problem numbers within an exercise are strictly
     increasing and never jump by more than one.
     """
     ex_prob_number = {}  # stores the current problem number for each exercise
@@ -94,7 +94,7 @@ def sequential_problem_numbers(attempts, idx):
 
 
 def incomplete_history(attempts, idx):
-    """Takes all problem logs for a user as a list of lists.  The inner lists
+    """Take all problem logs for a user as a list of lists.  The inner lists
     each represent a problem attempt, with items described and indexed by the
     idx argument.  This function returns True if we *know* we have an
     incomplete history for the user, by checking if the first problem seen
@@ -110,6 +110,7 @@ def incomplete_history(attempts, idx):
 
 
 def valid_history(attempts, idx):
+    """Validate that attempts on a problem have sequential problem numbers"""
     if not sequential_problem_numbers(attempts, idx):
         return False
 
