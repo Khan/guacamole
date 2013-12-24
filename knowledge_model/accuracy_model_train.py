@@ -6,12 +6,12 @@ below, or accuracy_model_featureset.py.
 
 import optparse
 import pickle
+import re
 import sys
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-import accuracy_model_util
 import regression_util
 
 # Minimum number of data samples required to fit a model.  Exercises which
@@ -30,7 +30,7 @@ MAX_SAMPLES = 50000
 TEST_SIZE = 500
 
 
-class FeaturesetFields:
+class FeaturesetFields(object):
     """Specify the column indices of specific data in the input file."""
     exercise = 0
     correct = 1
@@ -51,10 +51,7 @@ class FeaturesetFields:
     features_mirt = slice(12, None)
 
 
-idx = FeaturesetFields()
-
-
-class Dataset:
+class Dataset(object):
     def __init__(self, correct, baseline_prediction, features):
         self.correct = correct
         self.baseline_prediction = baseline_prediction
@@ -107,6 +104,8 @@ def preprocess_data(lines, options):
     # this step is critical- currently the input is sorted not only on exercise
     # but also subsequent fields, which could introduce a ton of bias
     np.random.shuffle(lines)
+
+    idx = FeaturesetFields()
 
     # TODO(jace): extract columns individually; avoid string column
     # turn it into a numpy array
@@ -291,10 +290,14 @@ def main():
     models = {}
 
     prev_key = None
+
+    idx = FeaturesetFields()
+
     lines = []
+    linesplit = linesplit = re.compile('[\t,\x01]')
     for line in sys.stdin:
 
-        row = accuracy_model_util.linesplit.split(line.strip())
+        row = linesplit.split(line.strip())
 
         model_key = options.topic if options.topic else row[idx.exercise]
 

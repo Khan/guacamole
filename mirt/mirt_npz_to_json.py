@@ -21,8 +21,9 @@ import numpy
 import sys
 
 
-def mirt_npz_to_json(npz_file, outfile=None, slug=None, title=None,
+def mirt_npz_to_json(npz_file, outfilename=None, slug=None, title=None,
                      description=None):
+    """Load an npz file and either print it or write to a file."""
     model = numpy.load(npz_file)
 
     theta = model["theta"][()]
@@ -65,17 +66,19 @@ def mirt_npz_to_json(npz_file, outfile=None, slug=None, title=None,
 
     json_data = json.dumps(out_data, indent=4)
 
-    if outfile:
-        with open(outfile, 'w') as f:
-            f.write(json_data)
+    if outfilename:
+        with open(outfilename, 'w') as outfile:
+            outfile.write(json_data)
     else:
         print json_data
 
 
-if __name__ == "__main__":
+def main():
+    """Find the npz file to be converted to json and convert it."""
     if len(sys.argv) != 2:
         exit("Usage: %s input_filename" % sys.argv[0])
-
     filename = sys.argv[1]
-
     mirt_npz_to_json(filename)
+
+if __name__ == "__main__":
+    main()

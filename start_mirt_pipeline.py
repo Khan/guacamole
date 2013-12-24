@@ -173,7 +173,7 @@ def generate_roc_curve_from_model(
 
     json_outfile = get_json_path(arguments) + param_str + '.json'
     mirt_npz_to_json.mirt_npz_to_json(
-        last_npz, outfile=json_outfile, slug=param_str,
+        last_npz, outfilename=json_outfile, slug=param_str,
         title='math', description='math')
     roc_file = roc_dir + param_str + '.roc'
     generate_predictions.load_and_simulate_assessment(

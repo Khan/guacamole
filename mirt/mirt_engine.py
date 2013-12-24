@@ -1,3 +1,4 @@
+"""Extends the generic testing engine to support adaptive pretests"""
 import numpy as np
 
 import mirt.engine

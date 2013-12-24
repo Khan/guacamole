@@ -58,6 +58,14 @@ class FieldIndexer(object):
         for i, field in enumerate(field_names):
             self.__dict__[field] = i
 
+    def get_values(self):
+        """"Return each value of the FieldIndexer"""
+        return self.__dict__.values()
+
+    def get_keys(self):
+        """Return each key of the FieldIndexer"""
+        return self.__dict__.keys()
+
     topic_attempt_fields = ['user', 'topic', 'exercise', 'time_done',
             'time_taken', 'problem_number', 'correct', 'scheduler_info',
             'user_segment', 'dt']
