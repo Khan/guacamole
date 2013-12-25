@@ -12,7 +12,9 @@ import sys
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
+from train_util import plot_roc_curves
 from train_util import regression_util
+
 
 # Minimum number of data samples required to fit a model.  Exercises which
 # do not have at least this many problems attempted will not have parameters,
@@ -58,47 +60,6 @@ class Dataset(object):
         self.correct = correct
         self.baseline_prediction = baseline_prediction
         self.features = features
-
-
-def roc_curve(correct, prediction_prob):
-    """Generate roc curve data given predictions and outcomes.
-
-    Take a list of actual and predicted accuracies, return a dict
-    with info to generate a roc curve.
-    """
-    thresholds = np.arange(-0.01, 1.02, 0.01)
-    true_pos = np.zeros(thresholds.shape)
-    true_neg = np.zeros(thresholds.shape)
-    tot_true = np.max([np.float(np.sum(correct)), 1])
-    tot_false = np.max([np.float(np.sum(np.logical_not(correct))), 1])
-
-    for i in range(thresholds.shape[0]):
-        threshold = thresholds[i]
-        pred1 = prediction_prob >= threshold
-        pred0 = prediction_prob < threshold
-        if np.sum(tot_true) > 0:
-            true_pos[i] = np.sum(correct[pred1]) / tot_true
-        if np.sum(tot_false) > 0:
-            true_neg[i] = np.sum(np.logical_not(correct[pred0])) / tot_false
-
-    return {"thresholds": thresholds,
-            "true_pos": true_pos,
-            "true_neg": true_neg}
-
-
-def print_roc_curve(curve):
-    """Print a series of locations on a curve and corresponding thresholds
-
-    Argument:
-        curve:
-            A dictionary of thresholds, true positives, and true negatives
-    """
-    num_points = len(curve['thresholds'])
-    for t in range(num_points):
-        print "rocline,",  # a known line prefix useful for grepping results
-        print "%s," % curve['thresholds'][t],
-        print "%s," % curve['true_pos'][t],
-        print "%s" % curve['true_neg'][t]
 
 
 def quantile(x, q):
@@ -218,8 +179,7 @@ def fit_logistic_log_regression(lines, options):
             np.mean(data_test.correct), np.mean(prediction))
     return {"theta": theta,
             "labels": data_test.correct,
-            "predictions": prediction,
-            "ROC": roc_curve(data_test.correct, prediction)}
+            "predictions": prediction}
 
 
 def fit_random_forest(lines, options):
@@ -237,8 +197,7 @@ def fit_random_forest(lines, options):
             np.mean(data_test.correct), np.mean(prediction))
     return {"theta": None,
             "labels": data_test.correct,
-            "predictions": prediction,
-            "ROC": roc_curve(data_test.correct, prediction)}
+            "predictions": prediction}
 
 
 def fit_model(models, model_key, lines, options):
@@ -287,8 +246,7 @@ def summarize_models(models):
         quants = quantiles(model['predictions'], [0.0, 0.1, 0.5, 0.9, 1.0])
         print "PREDICT_DIST,%s," % model_key,
         print ",".join([str(q) for q in quants])
-
-    print_roc_curve(roc_curve(labels, predictions))
+        plot_roc_curves.draw_roc_curve(model_key, labels, predictions)
 
 
 def output_models(models, options):
