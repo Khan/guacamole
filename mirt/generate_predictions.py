@@ -96,7 +96,7 @@ def load_and_simulate_assessment(
             # Save the indexes of the evaluation items for use when generating
             # points for the ROC curve.
             if is_evaluation:
-                evaluation_indexes.append(len(history))
+                evaluation_indexes.append(len(history) - 1)
         test_data.close()
         outfile.close()
 
@@ -151,11 +151,11 @@ def write_roc_datapoint(history, evaluation_indexes, model, outfile):
     # For each of the collected evaluation items, write the predicted accuracy
     for evaluation_item in evaluation_items:
         acc = model.estimated_exercise_accuracy(
-            history, evaluation_item.exercise)
+            history, evaluation_item['exercise'])
 
         # Finally, write the actual accuracy of the student on the exercise,
         # followed by the predicted accuracy.
-        if evaluation_item.correct:
+        if evaluation_item['correct']:
             outfile.write('1,')
         else:
             outfile.write('0,')
