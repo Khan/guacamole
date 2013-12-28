@@ -98,8 +98,7 @@ class AccuracyModel(object):
 
     # http://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
     def exp_moving_avg(self, weight):
-        """Return the exponential moving average of the history.
-        """
+        """Return the exponential moving average of the history."""
         ewma = EWMA_SEED
 
         for i in reversed(xrange(self.total_done)):
@@ -117,12 +116,12 @@ class AccuracyModel(object):
         return self.total_done
 
     def total_correct(self):
-        """Caculate the total number of problems answered correctly.
-        """
+        """Caculate the total number of problems answered correctly."""
         mask = (1 << self.total_done) - 1
         return bit_count(self.answer_history & mask)
 
     def feature_vector(self):
+        """Create a custom feature vector given the current history"""
         ewma_3 = self.exp_moving_avg(0.333)
         ewma_10 = self.exp_moving_avg(0.1)
         current_streak = self.streak()
@@ -152,6 +151,7 @@ class AccuracyModel(object):
         return features
 
     def weight_vector(self):
+        """Import weights from a parameter file."""
         # Note: element order must match the ordering of feature_vector
         return [params.EWMA_3,
                 params.EWMA_10,
@@ -161,6 +161,7 @@ class AccuracyModel(object):
                 params.PERCENT_CORRECT]
 
     def weighted_features(self):
+        """Return the combination of the features and weights"""
         return zip(self.feature_vector(), self.weight_vector())
 
     def predict(self):

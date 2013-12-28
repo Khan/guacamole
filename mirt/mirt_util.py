@@ -32,8 +32,6 @@ import time
 
 from train_util.regression_util import sigmoid
 
-from train_util.regression_util import sigmoid
-
 
 class Parameters(object):
     """

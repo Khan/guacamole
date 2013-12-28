@@ -51,8 +51,8 @@ class KnowledgeState(object):
 
     def __init__(self):
         self.data = {}
-        # note the following gets put in self.data through an @property
-        self.random_features = numpy.zeros((RANDOM_FEATURE_LENGTH, 1))
+        # # note the following gets put in self.data through an @property
+        # self.random_features = numpy.zeros((RANDOM_FEATURE_LENGTH, 1))
         self.accuracy_models = defaultdict(model.AccuracyModel)
 
     @property
