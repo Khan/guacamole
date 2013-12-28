@@ -161,8 +161,7 @@ def generate_model_with_parameters(
 
 def generate_roc_curve_from_model(
         arguments, abilities, time, datetime_str):
-    """Read results from each model trained and generate roc curves.
-    """
+    """Read results from each model trained and generate roc curves."""
     # There will be many .npz files written; we take the last one.
     mirt_dir = arguments.output + 'mirt/'
     roc_dir = mirt_dir + 'rocs/'

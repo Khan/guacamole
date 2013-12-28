@@ -62,35 +62,6 @@ class Dataset(object):
         self.features = features
 
 
-def quantile(x, q):
-    """Generate the q'th quantile of x
-    Arguments:
-        x: a numpy array
-        q: the quantile of interest (a float)
-    Returns:
-        the element of x closest to the qth quantile.
-    """
-    if len(x.shape) != 1:
-        return None
-    x = x.tolist()
-    x.sort()
-    return x[int((len(x) - 1) * float(q))]
-
-
-def quantiles(x, quantile_intervals):
-    """Generate a series of quantiles
-    Arguments:
-        x:
-            A numpy array of datapoints
-        quantile_intervals:
-            A list of quantiles to calculate
-    Returns:
-        a list in which members of the list are the quantiles of x
-        corresponding to the quantiles in the list q.
-    """
-    return [quantile(x, q) for q in quantile_intervals]
-
-
 def preprocess_data(lines, options):
     """Shuffle input and transform into a Dataset
     This step is critical- currently the input is sorted not only on exercise
@@ -243,7 +214,8 @@ def summarize_models(models):
             predictions = np.concatenate((predictions, model['predictions']))
 
         # print some information about the range/distribution of predictions
-        quants = quantiles(model['predictions'], [0.0, 0.1, 0.5, 0.9, 1.0])
+        quants = regression_util.quantiles(
+            model['predictions'], [0.0, 0.1, 0.5, 0.9, 1.0])
         print "PREDICT_DIST,%s," % model_key,
         print ",".join([str(q) for q in quants])
         plot_roc_curves.draw_roc_curve(model_key, labels, predictions)
