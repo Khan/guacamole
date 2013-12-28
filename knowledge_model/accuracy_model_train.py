@@ -12,13 +12,9 @@ import sys
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-<<<<<<< HEAD
-from train_util import regression_util
-=======
 from train_util import plot_roc_curves
 from train_util import regression_util
 
->>>>>>> fixes
 
 # Minimum number of data samples required to fit a model.  Exercises which
 # do not have at least this many problems attempted will not have parameters,
@@ -66,79 +62,6 @@ class Dataset(object):
         self.features = features
 
 
-<<<<<<< HEAD
-def roc_curve(correct, prediction_prob):
-    """Generate roc curve data given predictions and outcomes.
-
-    Take a list of actual and predicted accuracies, return a dict
-    with info to generate a roc curve.
-    """
-    thresholds = np.arange(-0.01, 1.02, 0.01)
-    true_pos = np.zeros(thresholds.shape)
-    true_neg = np.zeros(thresholds.shape)
-    tot_true = np.max([np.float(np.sum(correct)), 1])
-    tot_false = np.max([np.float(np.sum(np.logical_not(correct))), 1])
-
-    for i in range(thresholds.shape[0]):
-        threshold = thresholds[i]
-        pred1 = prediction_prob >= threshold
-        pred0 = prediction_prob < threshold
-        if np.sum(tot_true) > 0:
-            true_pos[i] = np.sum(correct[pred1]) / tot_true
-        if np.sum(tot_false) > 0:
-            true_neg[i] = np.sum(np.logical_not(correct[pred0])) / tot_false
-
-    return {"thresholds": thresholds,
-            "true_pos": true_pos,
-            "true_neg": true_neg}
-
-
-def print_roc_curve(curve):
-    """Print a series of locations on a curve and corresponding thresholds
-
-    Argument:
-        curve:
-            A dictionary of thresholds, true positives, and true negatives
-    """
-    num_points = len(curve['thresholds'])
-    for t in range(num_points):
-        print "rocline,",  # a known line prefix useful for grepping results
-        print "%s," % curve['thresholds'][t],
-        print "%s," % curve['true_pos'][t],
-        print "%s" % curve['true_neg'][t]
-
-
-def quantile(x, q):
-    """Generate the q'th quantile of x
-    Arguments:
-        x: a numpy array
-        q: the quantile of interest (a float)
-    Returns:
-        the element of x closest to the qth quantile.
-    """
-    if len(x.shape) != 1:
-        return None
-    x = x.tolist()
-    x.sort()
-    return x[int((len(x) - 1) * float(q))]
-
-
-def quantiles(x, quantile_intervals):
-    """Generate a series of quantiles
-    Arguments:
-        x:
-            A numpy array of datapoints
-        quantile_intervals:
-            A list of quantiles to calculate
-    Returns:
-        a list in which members of the list are the quantiles of x
-        corresponding to the quantiles in the list q.
-    """
-    return [quantile(x, q) for q in quantile_intervals]
-
-
-=======
->>>>>>> fixes
 def preprocess_data(lines, options):
     """Shuffle input and transform into a Dataset
     This step is critical- currently the input is sorted not only on exercise
