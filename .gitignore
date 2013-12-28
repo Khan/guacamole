@@ -1,0 +1,5 @@
+*.pyc
+*.npz
+*.csv
+*.json
+sample_data/output*
