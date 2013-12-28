@@ -12,7 +12,13 @@ import sys
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
+<<<<<<< HEAD
 from train_util import regression_util
+=======
+from train_util import plot_roc_curves
+from train_util import regression_util
+
+>>>>>>> fixes
 
 # Minimum number of data samples required to fit a model.  Exercises which
 # do not have at least this many problems attempted will not have parameters,
@@ -60,6 +66,7 @@ class Dataset(object):
         self.features = features
 
 
+<<<<<<< HEAD
 def roc_curve(correct, prediction_prob):
     """Generate roc curve data given predictions and outcomes.
 
@@ -130,6 +137,8 @@ def quantiles(x, quantile_intervals):
     return [quantile(x, q) for q in quantile_intervals]
 
 
+=======
+>>>>>>> fixes
 def preprocess_data(lines, options):
     """Shuffle input and transform into a Dataset
     This step is critical- currently the input is sorted not only on exercise
@@ -218,8 +227,7 @@ def fit_logistic_log_regression(lines, options):
             np.mean(data_test.correct), np.mean(prediction))
     return {"theta": theta,
             "labels": data_test.correct,
-            "predictions": prediction,
-            "ROC": roc_curve(data_test.correct, prediction)}
+            "predictions": prediction}
 
 
 def fit_random_forest(lines, options):
@@ -237,8 +245,7 @@ def fit_random_forest(lines, options):
             np.mean(data_test.correct), np.mean(prediction))
     return {"theta": None,
             "labels": data_test.correct,
-            "predictions": prediction,
-            "ROC": roc_curve(data_test.correct, prediction)}
+            "predictions": prediction}
 
 
 def fit_model(models, model_key, lines, options):
@@ -284,11 +291,11 @@ def summarize_models(models):
             predictions = np.concatenate((predictions, model['predictions']))
 
         # print some information about the range/distribution of predictions
-        quants = quantiles(model['predictions'], [0.0, 0.1, 0.5, 0.9, 1.0])
+        quants = regression_util.quantiles(
+            model['predictions'], [0.0, 0.1, 0.5, 0.9, 1.0])
         print "PREDICT_DIST,%s," % model_key,
         print ",".join([str(q) for q in quants])
-
-    print_roc_curve(roc_curve(labels, predictions))
+        plot_roc_curves.draw_roc_curve(model_key, labels, predictions)
 
 
 def output_models(models, options):

@@ -161,8 +161,7 @@ def generate_model_with_parameters(
 
 def generate_roc_curve_from_model(
         arguments, abilities, time, datetime_str):
-    """Read results from each model trained and generate roc curves.
-    """
+    """Read results from each model trained and generate roc curves."""
     # There will be many .npz files written; we take the last one.
     mirt_dir = arguments.output + 'mirt/'
     roc_dir = mirt_dir + 'rocs/'
@@ -170,12 +169,17 @@ def generate_roc_curve_from_model(
     param_str = gen_param_str(abilities, datetime_str, time)
     out_dir_name = arguments.output + 'mirt/' + param_str + '/'
     last_npz = get_latest_npz_file_name(out_dir_name)
-
+    print 'getting last npz'
+    print last_npz
     json_outfile = get_json_path(arguments) + param_str + '.json'
+    print 'writing json'
+    print json_outfile
     mirt_npz_to_json.mirt_npz_to_json(
         last_npz, outfilename=json_outfile, slug=param_str,
         title='math', description='math')
     roc_file = roc_dir + param_str + '.roc'
+    print 'writing to roc file'
+    print roc_file
     generate_predictions.load_and_simulate_assessment(
         json_outfile, roc_file, test_file, user_index=0,
         exercise_index=2, time_index=3, correct_index=4)

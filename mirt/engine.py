@@ -7,11 +7,6 @@ import abc
 import datetime
 
 
-class UnknownEngineError(Exception):
-    """Raise when an engine is suggested that has not been implemented"""
-    pass
-
-
 class InvalidEngineParamsError(Exception):
     """Raise when parameters that do not make sense are suggested."""
     pass
@@ -166,29 +161,6 @@ class Engine(object):
         Returns: dict
         """
         pass
-
-    # Inherited methods
-    @staticmethod
-    def lookup_engine(class_name):
-        """Take a string representing the class name, which must be one of
-        the implemented classes.
-
-        Return an engine object of the appropriate
-        type.
-        TODO (eliana): This shouldn't be a class method of engine.py.
-        Move to webapp/assessment/handlers.py, which is where it's called from
-        """
-        if class_name == "MIRTEngine":
-            import mirt.mirt_engine
-            return mirt.mirt_engine.MIRTEngine
-        elif class_name == "SimpleEngine":
-            import mirt.simple_engine
-            return mirt.simple_engine.SimpleEngine
-        elif class_name == "PretestEngine":
-            import mirt.pretest_engine
-            return mirt.pretest_engine.PretestEngine
-
-        raise UnknownEngineError()
 
     def is_complete(self, history):
         """Take history, which is a list of dictionaries describing

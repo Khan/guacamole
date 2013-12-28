@@ -54,11 +54,12 @@ class MIRTEngine(engine.Engine):
         """Returns a dictionary where the keys are all the exercise names
         known by the engine to be in the domain.
         """
+        history = [h for h in history if h['exercise'] in self.exercises()]
         # for efficiency update ability estimates only once -- outside the loop
         self._update_abilities(history)
 
         return {ex: self.estimated_exercise_accuracy(history, ex, False)
-            for ex in self.exercises()}
+                for ex in self.exercises()}
 
     def estimated_exercise_accuracy(self, history, exercise_name,
             update_abilities=True, ignore_analytics=False):
@@ -67,10 +68,13 @@ class MIRTEngine(engine.Engine):
         """
         if update_abilities:
             self._update_abilities(history, ignore_analytics=ignore_analytics)
-
-        exercise_ind = mirt_util.get_exercises_ind(exercise_name,
-                self.exercise_ind_dict)
-
+        try:
+            exercise_ind = mirt_util.get_exercises_ind(
+                exercise_name, self.exercise_ind_dict)
+        except KeyError:
+            # If we don't have this exercise, predict the mean predicted
+            # accuracy over all exercises we do have.
+            return self.score(history)
         return mirt_util.conditional_probability_correct(
             self.abilities, self.theta, exercise_ind)[0]
 
@@ -90,10 +94,12 @@ class MIRTEngine(engine.Engine):
         return np.mean(predicted_accuracies)
 
     def readable_score(self, history):
+        """Return the score formatted as a percent"""
         score = self.score(history)
         return str(int(score * 100.0))
 
     def progress(self, history):
+        """Return the portion of the problems completed."""
         return min(float(len(history)) / self.max_length, 1.0)
 
     # ===== END: Engine interface implementation =====
@@ -111,10 +117,12 @@ class MIRTEngine(engine.Engine):
         return fisher_info
 
     def exercises(self):
+        """Return the slug of all exercises as a list"""
         return self.exercise_ind_dict.keys()
 
     def _update_abilities(self, history, use_mean=True, num_steps=200,
                           ignore_analytics=False):
+        """Take the history and update the ability estimate."""
         # TODO(jace) - check to see if history has actually changed
         # to avoid needless re-estimation
         # If ignore_analytics is true, only learn from non-analytics cards

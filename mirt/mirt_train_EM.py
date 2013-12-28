@@ -19,14 +19,10 @@ import copy
 import datetime
 import fileinput
 import multiprocessing
-from multiprocessing import Pool
 import numpy as np
 import optparse
 import re
-import scipy
-import scipy.optimize
 import sys
-import time
 
 # necessary to do this after importing numpy to take advantage of
 # multiple cores on unix
@@ -47,6 +43,7 @@ num_exercises = 0
 
 
 def get_indexer(options):
+    """Generate an indexer describing the locations of fields within data."""
     if options.data_format == 'simple':
         idx_pl = FieldIndexer(FieldIndexer.simple_fields)
     else:
@@ -61,39 +58,8 @@ def generate_exercise_ind():
     return num_exercises - 1
 
 
-def sample_abilities_diffusion(args):
-    """Sample the ability vector for this user, from the posterior over user
-    ability conditioned on the observed exercise performance.
-    use Metropolis-Hastings with Gaussian proposal distribution.
-
-    This is just a wrapper around the corresponding function in mirt_util.
-    """
-    # TODO(jascha) make this a better sampler (eg, use the HMC sampler from
-    # TMIRT)
-
-    # make sure each student gets a different random sequence
-    id = multiprocessing.current_process()._identity
-    if len(id) > 0:
-        np.random.seed([id[0], time.time() * 1e9])
-    else:
-        np.random.seed([time.time() * 1e9])
-
-    theta, state, options, user_index = args
-    abilities = state['abilities']
-    correct = state['correct']
-    log_time_taken = state['log_time_taken']
-    exercises_ind = state['exercises_ind']
-
-    num_steps = options.sampling_num_steps
-
-    abilities, Eabilities, _, _ = mirt_util.sample_abilities_diffusion(
-            theta, exercises_ind, correct, log_time_taken,
-            abilities, num_steps)
-
-    return abilities, Eabilities, user_index
-
-
 def get_cmd_line_options(arguments=None):
+    """Retreive user specified parameters"""
     parser = optparse.OptionParser()
     parser.add_option("-a", "--num_abilities", type=int, default=1,
                       help=("Number of hidden ability units"))
@@ -301,7 +267,6 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
 def emit_features(user_states, theta, options, split_desc):
     """Emit a CSV data file of correctness, prediction, and abilities."""
     f = open("%s_split=%s.csv" % (options.output, split_desc), 'w+')
-
     for user_state in user_states:
         # initialize
         abilities = np.zeros((options.num_abilities, 1))
@@ -326,31 +291,6 @@ def emit_features(user_states, theta, options, split_desc):
     f.close()
 
 
-def check_grad(L_dL, theta, args=()):
-    print >>sys.stderr, "Checking gradients."
-
-    step_size = 1e-6
-
-    f0, df0 = L_dL(theta.copy(), *args)
-    # test gradients in random order. This lets us run check gradients on the
-    # full size model, but still statistically test every type of gradient.
-    test_order = range(theta.shape[0])
-    np.random.shuffle(test_order)
-    for ind in test_order:
-        theta_offset = np.zeros(theta.shape)
-        theta_offset[ind] = step_size
-        f1, df1 = L_dL(theta.copy() + theta_offset, *args)
-        df_true = (f1 - f0) / step_size
-
-        # error in the gradient divided by the mean gradient
-        rr = (df0[ind] - df_true) * 2. / (df0[ind] + df_true)
-
-        print "ind", ind, "ind mod 3", np.mod(ind, 3),
-        print "ind/3", np.floor(ind / 3.),
-        print "df pred", df0[ind], "df true", df_true,
-        print "(df pred - df true)*2/(df pred + df true)", rr
-
-
 def main():
     options = get_cmd_line_options()
     run(options)
@@ -361,18 +301,16 @@ def run_programmatically(arguments):
     run(options)
 
 
-def run(options):
-    print >>sys.stderr, "Starting main.", options  # DEBUG
-    idx_pl = get_indexer(options)
-    pool = None
-    if options.workers > 1:
-        pool = Pool(options.workers)
-    exercise_ind_dict = defaultdict(generate_exercise_ind)
-
+def get_data_from_file(options, exercise_ind_dict):
+    """Iterate through the input file to retrieve student responses
+    Input: the options specified by the user
+    Outputs: The user_states
+    """
     user_states = []
     user_states_train = []
     user_states_test = []
 
+    idx_pl = get_indexer(options)
     print >>sys.stderr, "loading data"
     prev_user = None
     attempts = []
@@ -389,10 +327,8 @@ def run(options):
                 user_states.append(create_user_state(
                         attempts, exercise_ind_dict, options))
                 attempts = []
-                prev_user = user
-                row[idx_pl.correct] = row[idx_pl.correct] == 'true'
-                row[idx_pl.time_taken] = float(row[idx_pl.time_taken])
-                attempts.append(row)
+
+            prev_user = user
             row[idx_pl.correct] = row[idx_pl.correct] == 'true'
             row[idx_pl.time_taken] = float(row[idx_pl.time_taken])
             attempts.append(row)
@@ -417,15 +353,22 @@ def run(options):
                 user_states_test = copy.deepcopy(user_states[training_cutoff:])
             user_states = []
 
-    # if splitting data into test/training sets, set user_states to training
+    # if splitting data into test/training, set user_states to training
     user_states = user_states_train if user_states_train else user_states
+
+    return user_states, user_states_train, user_states_test
+
+
+def run(options):
+    print >>sys.stderr, "Starting main.", options  # DEBUG
+    exercise_ind_dict = defaultdict(generate_exercise_ind)
+    user_states, user_states_train, user_states_test = get_data_from_file(
+        options, exercise_ind_dict)
 
     print >>sys.stderr, "Training dataset, %d students" % (len(user_states))
 
     # initialize the parameters
     print >>sys.stderr, "%d exercises" % (num_exercises)
-    theta = mirt_util.Parameters(options.num_abilities, num_exercises)
-    theta.sigma_time[:] = 1.
     # we won't be adding any more exercises
     exercise_ind_dict = dict(exercise_ind_dict)
 
@@ -435,123 +378,23 @@ def run(options):
         # hacky version, pass --num_epochs 0 and you must pass the same
         # data file the model in resume_from_file was trained on.
         resume_from_model = np.load(options.resume_from_file)
-        theta = resume_from_model['theta'][()]
         exercise_ind_dict = resume_from_model['exercise_ind_dict']
         print >>sys.stderr, "Loaded parameters from %s" % (
             options.resume_from_file)
 
+    model = mirt_util.MirtModel(
+        options, num_exercises, exercise_ind_dict, user_states)
+
     # now do num_epochs EM steps
     for epoch in range(options.num_epochs):
-        print >>sys.stderr, "epoch %d, " % epoch,
-
-        # Expectation step
-        # Compute (and print) the energies during learning as a diagnostic.
-        # These should decrease.
-        Eavg = 0.
-        # TODO(jascha) this would be faster if user_states was divided into
-        # minibatches instead of single students
-        if pool is None:
-            rslts = map(sample_abilities_diffusion,
-                        [(theta, user_states[ind], options, ind)
-                            for ind in range(len(user_states))])
-        else:
-            rslts = pool.map(sample_abilities_diffusion,
-                            [(theta, user_states[ind], options, ind)
-                                for ind in range(len(user_states))],
-                            chunksize=100)
-        for r in rslts:
-            abilities, El, ind = r
-            user_states[ind]['abilities'] = abilities.copy()
-            Eavg += El / float(len(user_states))
-        print >>sys.stderr, "E joint log L + const %f, " % (
-                -Eavg / np.log(2.)),
-
-        # debugging info -- accumulate mean and covariance of abilities vector
-        mn_a = 0.
-        cov_a = 0.
-        for state in user_states:
-            mn_a += state['abilities'][:, 0].T / float(len(user_states))
-            cov_a += (state['abilities'][:, 0] ** 2).T / (
-                        float(len(user_states)))
-        print >>sys.stderr, "<abilities>", mn_a,
-        print >>sys.stderr, ", <abilities^2>", cov_a, ", ",
-
-        # check_grad(L_dL, theta.flat(), args=(user_states,
-        #     num_exercises, options, pool))
-
-        # Maximization step
-        old_theta_flat = theta.flat()
-        #print "about to minimize"
-        theta_flat, L, _ = scipy.optimize.fmin_l_bfgs_b(
-            L_dL,
-            theta.flat(),
-            args=(user_states, num_exercises, options, pool),
-            disp=0,
-            maxfun=options.max_pass_lbfgs, m=100)
-        theta = mirt_util.Parameters(options.num_abilities, num_exercises,
-                                     vals=theta_flat)
-
-        if options.correct_only:
-            theta.sigma_time[:] = 1.
-            theta.W_time[:, :] = 0.
-
-        # Print debugging info on the progress of the training
-        print >>sys.stderr, "M conditional log L %f, " % (-L),
-        print >>sys.stderr, "reg penalty %f, " % (
-                options.regularization * np.sum(theta_flat ** 2)),
-        print >>sys.stderr, "||couplings|| %f, " % (
-                np.sqrt(np.sum(theta.flat() ** 2))),
-        print >>sys.stderr, "||dcouplings|| %f" % (
-                np.sqrt(np.sum((theta_flat - old_theta_flat) ** 2)))
-
-        # Maintain a consistent directional meaning of a
-        # high/low ability esimtate.  We always prefer higher ability to
-        # mean better performance; therefore, we prefer positive couplings.
-        # So, compute the sign of the average coupling for each dimension.
-        coupling_sign = np.sign(np.mean(theta.W_correct[:, :-1], axis=0))
-        coupling_sign = coupling_sign.reshape((1, -1))
-        # Then, flip ability and coupling sign for dimenions w/ negative mean.
-        theta.W_correct[:, :-1] *= coupling_sign
-        theta.W_time[:, :-1] *= coupling_sign
-        for user_state in user_states:
-            user_state['abilities'] *= coupling_sign.T
-
-        # save state as a .npz
-        np.savez("%s_epoch=%d.npz" % (options.output, epoch),
-                 theta=theta,
-                 exercise_ind_dict=exercise_ind_dict,
-                 max_time_taken=options.max_time_taken)
-
-        # save state as .csv - just for easy debugging inspection
-        f1 = open("%s_epoch=%d.csv" % (options.output, epoch), 'w+')
-        nms = sorted(exercise_ind_dict.keys(),
-                key=lambda nm: theta.W_correct[exercise_ind_dict[nm], -1])
-
-        print >>f1, 'correct bias,',
-        for ii in range(options.num_abilities):
-            print >>f1, "correct coupling %d," % ii,
-        print >>f1, 'time bias,',
-        for ii in range(options.num_abilities):
-            print >>f1, "time coupling %d," % ii,
-        print >>f1, 'time variance,',
-        print >>f1, 'exercise name'
-        for nm in nms:
-            print >>f1, theta.W_correct[exercise_ind_dict[nm], -1], ',',
-            for ii in range(options.num_abilities):
-                print >>f1, theta.W_correct[exercise_ind_dict[nm], ii], ',',
-            print >>f1, theta.W_time[exercise_ind_dict[nm], -1], ',',
-            for ii in range(options.num_abilities):
-                print >>f1, theta.W_time[exercise_ind_dict[nm], ii], ',',
-            print >>f1, theta.sigma_time[exercise_ind_dict[nm]], ',',
-            print >>f1, nm
-        f1.close()
+        model.run_em_step(epoch)
 
     if options.emit_features:
         if options.training_set_size < 1.0:
-            emit_features(user_states_test, theta, options, "test")
-            emit_features(user_states_train, theta, options, "train")
+            emit_features(user_states_test, model.theta, options, "test")
+            emit_features(user_states_train, model.theta, options, "train")
         else:
-            emit_features(user_states, theta, options, "full")
+            emit_features(user_states, model.theta, options, "full")
 
 
 if __name__ == '__main__':

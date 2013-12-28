@@ -27,6 +27,10 @@ import numpy as np
 import scipy
 import sys
 import warnings
+import multiprocessing
+import time
+
+from train_util.regression_util import sigmoid
 
 from train_util.regression_util import sigmoid
 
@@ -118,7 +122,7 @@ def conditional_probability_correct(abilities, theta, exercises_ind):
 
 def conditional_energy_data(
         abilities, theta, exercises_ind, correct, log_time_taken):
-    """Calculate the probability of the observed responses "correct" to
+    """Calculate the energy of the observed responses "correct" to
     exercises "exercises", conditioned on the abilities vector for a single
     user, and with MIRT parameters given in "couplings"
 
@@ -140,9 +144,6 @@ def conditional_energy_data(
 
     Returns:
         A 1-d ndarray of probabilities, with shape = (q)
-
-    TODO(eliana): Rename to condtional energy data and remove the E paramenter,
-        treating it as always true?
     """
     # predicted probability correct
     c_pred = conditional_probability_correct(abilities, theta, exercises_ind)
@@ -165,6 +166,37 @@ def conditional_energy_data(
     assert len(E_observed.shape) == 1
 
     return E_observed
+
+
+def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
+    """Sample the ability vector for this user, from the posterior over user
+    ability conditioned on the observed exercise performance.
+    use Metropolis-Hastings with Gaussian proposal distribution.
+
+    This is just a wrapper around sample_abilities_diffusion.
+    """
+    # TODO(jascha) make this a better sampler (eg, use the HMC sampler from
+    # TMIRT)
+
+    # make sure each student gets a different random sequence
+    id = multiprocessing.current_process()._identity
+    if len(id) > 0:
+        np.random.seed([id[0], time.time() * 1e9])
+    else:
+        np.random.seed([time.time() * 1e9])
+
+    abilities = state['abilities']
+    correct = state['correct']
+    log_time_taken = state['log_time_taken']
+    exercises_ind = state['exercises_ind']
+
+    num_steps = options.sampling_num_steps
+
+    abilities, Eabilities, _, _ = sample_abilities_diffusion(
+            theta, exercises_ind, correct, log_time_taken,
+            abilities, num_steps)
+
+    return abilities, Eabilities, user_index
 
 
 def sample_abilities_diffusion(
@@ -204,14 +236,11 @@ def sample_abilities_diffusion(
         3: The mean of the abilities vectors in the entire chain.
         4: The standard deviation of the abilities vectors in the entire chain.
     """
-
     # TODO -- this would run faster with something like an HMC sampler
-
-    num_abilities = theta.num_abilities
 
     # initialize abilities using prior
     if abilities_init is None:
-        abilities = np.random.randn(num_abilities, 1)
+        abilities = np.random.randn(theta.num_abilities, 1)
     else:
         abilities = abilities_init
     # calculate the energy for the initialization state
@@ -223,7 +252,7 @@ def sample_abilities_diffusion(
     for _ in range(num_steps):
         # generate the proposal state
         proposal = abilities + sampling_epsilon * np.random.randn(
-            num_abilities, 1)
+            theta.num_abilities, 1)
 
         E_proposal = 0.5 * np.dot(proposal.T, proposal) + np.sum(
             conditional_energy_data(
@@ -250,15 +279,18 @@ def sample_abilities_diffusion(
     sample_chain = np.asarray(sample_chain)
 
     # Compute the abilities posterior mean.
-    mean_sample_abilities = np.mean(sample_chain, 0).reshape(num_abilities, 1)
-    stdev = np.std(sample_chain, 0).reshape(num_abilities, 1)
+    mean_sample_abilities = np.mean(sample_chain, 0).reshape(
+        theta.num_abilities, 1)
+    stdev = np.std(sample_chain, 0).reshape(theta.num_abilities, 1)
 
     return abilities, E_abilities, mean_sample_abilities, stdev
 
 
-def L_dL_singleuser(theta, state, options):
-    """calculate log likelihood and gradient wrt couplings of mIRT model
+def L_dL_singleuser(arg):
+    """ calculate log likelihood and gradient wrt couplings of mIRT model
         for single user """
+    theta, state, options = arg
+
     abilities = state['abilities'].copy()
     correct = state['correct']
     exercises_ind = state['exercises_ind']
@@ -304,14 +336,17 @@ def L_dL_singleuser(theta, state, options):
 
 
 def L_dL(theta_flat, user_states, num_exercises, options, pool):
-    """Calculate log likelihood and gradient wrt couplings of mIRT model """
+    """ calculate log likelihood and gradient wrt couplings of mIRT model """
+
+    L = 0.
     theta = Parameters(options.num_abilities, num_exercises,
-        vals=theta_flat.copy())
+                                 vals=theta_flat.copy())
+
     nu = float(len(user_states))
 
     # note that the nu gets divided back out below, so the regularization term
     # does not end up with a factor of nu.
-    L = options.regularization * nu * np.sum(theta_flat ** 2)
+    L += options.regularization * nu * np.sum(theta_flat ** 2)
     dL_flat = 2. * options.regularization * nu * theta_flat
     dL = Parameters(theta.num_abilities, theta.num_exercises,
                               vals=dL_flat)
@@ -323,15 +358,14 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
     # TODO(jascha) this would be faster if user_states was divided into
     # minibatches instead of single students
     if pool is None:
-        results = [
-            L_dL_singleuser(theta, state, options) for state in user_states]
+        rslts = map(L_dL_singleuser,
+                    [(theta, state, options) for state in user_states])
     else:
-        results = pool.map(L_dL_singleuser,
-                           [(theta, state, options) for state in user_states],
-                           chunksize=100)
-
-    for result in results:
-        Lu, dLu, exercise_indu = result
+        rslts = pool.map(L_dL_singleuser,
+                         [(theta, state, options) for state in user_states],
+                         chunksize=100)
+    for r in rslts:
+        Lu, dLu, exercise_indu = r
         L += Lu
         dL.W_correct[exercise_indu, :] += dLu.W_correct
         dL.W_time[exercise_indu, :] += dLu.W_time
@@ -384,12 +418,12 @@ class MirtModel(object):
         #theta, exercises_ind, correct, log_time_taken):
         #theta, exercises_ind, correct, log_time_taken, abilities, num_steps)
         if self.pool is None:
-            results = [sample_abilities_diffusion(
+            results = [sample_abilities_diffusion_wrapper(
                         self.theta, self.user_states[ind], self.options, ind)
                         for ind in range(len(self.user_states))]
         else:
             results = self.pool.map(
-                sample_abilities_diffusion,
+                sample_abilities_diffusion_wrapper,
                 [(self.theta, self.user_states[ind], self.options, ind)
                 for ind in range(len(self.user_states))],
                 chunksize=100)
