@@ -181,8 +181,7 @@ def generate_roc_curve_from_model(
     print 'writing to roc file'
     print roc_file
     generate_predictions.load_and_simulate_assessment(
-        json_outfile, roc_file, test_file, user_index=0,
-        exercise_index=2, time_index=3, correct_index=4)
+        json_outfile, roc_file, test_file)
 
 
 def run_with_arguments(arguments):

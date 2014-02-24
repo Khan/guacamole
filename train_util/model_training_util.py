@@ -58,6 +58,16 @@ class FieldIndexer(object):
         for i, field in enumerate(field_names):
             self.__dict__[field] = i
 
+    @staticmethod
+    def get_for_slug(slug):
+        """Generate an indexer describing the locations of fields within data.
+        """
+        if slug == 'simple':
+            return FieldIndexer(FieldIndexer.simple_fields)
+        elif slug == 'topic_attempt_fields':
+            return FieldIndexer(FieldIndexer.topic_attempt_fields)
+        return FieldIndexer(FieldIndexer.plog_fields)
+
     def get_values(self):
         """"Return each value of the FieldIndexer"""
         return self.__dict__.values()

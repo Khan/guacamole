@@ -229,7 +229,7 @@ def get_data_from_file(options, exercise_ind_dict):
                 attempts = []
 
             prev_user = user
-            row[idx_pl.correct] = row[idx_pl.correct] == 'true'
+            row[idx_pl.correct] = row[idx_pl.correct] in ('true', 'True', '1')
             row[idx_pl.time_taken] = float(row[idx_pl.time_taken])
             attempts.append(row)
 

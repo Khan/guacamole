@@ -3,15 +3,16 @@
 """
 import json
 import numpy
+import random
 
 import mirt.engine
 import mirt.mirt_engine
+from train_util.model_training_util import FieldIndexer
 
 
 def load_and_simulate_assessment(
-        json_filepath, roc_filepath, test_filepath, user_index=0,
-        exercise_index=1, time_index=2, correct_index=3,
-        evaluation_item_index=4):
+        json_filepath, roc_filepath, test_filepath, data_format='simple',
+        evaluation_item_index=None):
     """Loads a json mirt file and a test file with assessments to evaluate.
 
     Some questions are marked as evaluation items, and these items are held
@@ -52,12 +53,15 @@ def load_and_simulate_assessment(
         evaluation_item_index: The index of the flag used to indicate whether
             this response should be used to generate the ROC curve.
             If the response should be held out, this value should be 'true' or
-            'True'
+            'True'.  If there is no such value, keep a random item.
     """
     # Load the parameters from the json parameter file.
     with open(json_filepath, 'r') as json_file:
         params = json.load(json_file)['params']
         params['theta_flat'] = numpy.array(params['theta_flat'])
+
+    # Load the indexer for the data
+    indexer = FieldIndexer.get_for_slug(data_format)
 
     # Iterate through each user's data, writing out a datapoint for
     # each user.
@@ -73,14 +77,14 @@ def load_and_simulate_assessment(
         for line in test_data:
             # Read in the next line
             new_user, ex, time, correct, is_evaluation = parse_line(
-                line, user_index, exercise_index, time_index, correct_index,
-                evaluation_item_index)
+                line, indexer, evaluation_item_index)
 
             # When we see a new user reset the model and calculate predictions.
             if user != new_user:
                 # Generate the datapoint for the existing user history
-                write_roc_datapoint(
-                    history, evaluation_indexes, model, outfile)
+                if user:
+                    write_roc_datapoint(
+                        history, evaluation_indexes, model, outfile)
 
                 # Reset all of the variables.
                 user = new_user
@@ -101,8 +105,7 @@ def load_and_simulate_assessment(
         outfile.close()
 
 
-def parse_line(line, user_index, exercise_index, time_index, correct_index,
-               evaluation_item_index):
+def parse_line(line, indexer, evaluation_item_index):
     """Parses a line of an input file in a specified format.
 
     Takes a line and the location of various critical fields within the line
@@ -110,12 +113,15 @@ def parse_line(line, user_index, exercise_index, time_index, correct_index,
     Returns the user, exercise, time taken, and whether the problem was
     answered correctly
     """
-    line = line.split(',')
-    user = line[user_index]
-    ex = line[exercise_index]
-    time = line[time_index]
-    correct = line[correct_index] in ('true', 'True')
-    is_evaluation = line[evaluation_item_index] in ('true', 'True')
+    line = line.strip().split(',')
+    user = line[indexer.user]
+    ex = line[indexer.exercise]
+    time = line[indexer.time_taken]
+    correct = line[indexer.correct] in ('true', 'True', 1)
+    if evaluation_item_index is not None:
+        is_evaluation = line[evaluation_item_index] in ('true', 'True')
+    else:
+        is_evaluation = False
     return user, ex, time, correct, is_evaluation
 
 
@@ -126,6 +132,7 @@ def write_roc_datapoint(history, evaluation_indexes, model, outfile):
         history: A list of item responses given by a single user.
         evaluation_item_index: The index in the list at which the item we
             hold out and generate an ROC datapoint for is located.
+            If there is no such index, write a random item
         model: a model that holds the trained parameters and makes predictions
             about accuracy.
         outfile: An open file we print the roc point to.
@@ -137,6 +144,10 @@ def write_roc_datapoint(history, evaluation_indexes, model, outfile):
     # First we reverse the order of the evaluation indexes, so that as we
     # remove these holdout exercises, the index positions do not change.
     evaluation_indexes.reverse()
+
+    # If there is no evaluation index, evaluate a random response
+    if not evaluation_indexes:
+        evaluation_indexes = [random.choice(range(len(history)))]
 
     # We collect all evaluation items in a list and remove them from history
     # so that we can evaluate the models accuracy untainted with information
