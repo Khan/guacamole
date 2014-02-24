@@ -3,8 +3,6 @@
 For more detail on the expected format of the input data, see FeaturesetFields
 below, or accuracy_model_featureset.py.
 """
-
-import optparse
 import pickle
 import re
 import sys
@@ -24,11 +22,11 @@ MIN_SAMPLES = 5000
 # faster training and are confident that MAX_SAMPLES will be enough data to
 # avoid overfitting.
 MAX_SAMPLES = 50000
-# The amount of data witheld for testing.  This can be an integer number of
+# The amount of data withheld for testing.  This can be an integer number of
 # samples, or a fraction (expressed as a decimal between 0.0 and 1.0).  Note
 # that the choice of a fixed size will affect analysis of model performance
 # that averages across exercises by either equal-weighting performance of
-# each exercise or weighthing proportional to frequency of attempts.
+# each exercise or weighting proportional to frequency of attempts.
 TEST_SIZE = 500
 
 
@@ -235,38 +233,8 @@ def output_models(models, options):
         pickle.dump(output, outfile)
 
 
-def get_cmd_line_options():
-    """Retrieve options that parameterize the model training."""
-    parser = optparse.OptionParser()
-
-    parser.add_option("-c", "--classifier", default='logistic_log',
-            help="Type of classifier.  'logistic_log' or 'random_forest'.")
-    parser.add_option("-f", "--feature_list", default='baseline',
-            help="Comma seprated list to feature types to use. Choose from "
-                 "baseline, custom, random, and mirt. If you want to run "
-                 "with nothing but a bias feature, use 'none'.")
-    parser.add_option("-n", "--no_bias", dest="no_bias", action="store_true",
-            help="Whether to omit using a bias in the feature set.  By "
-                 "default a bias unit is included.")
-    parser.add_option("-r", "--rand_comp_file",
-            help="Name of a file to optionally write the random components "
-                 "to.")
-    parser.add_option("-o", "--output_model_file",
-            help="Name of a file you optionally want to write a pickeled "
-                 "file of all the models to.")
-    parser.add_option("-t", "--topic",
-            help="If given, then models are not fit per exercise; rather "
-                 "all exercises are treated as part of one 'topic' and one "
-                 "model is fit for all of the data.")
-
-    options, _ = parser.parse_args()
-    return options
-
-
-def main():
+def main(options, dataset):
     """Load arguments, load data, train models, and summarize."""
-    options = get_cmd_line_options()
-
     models = {}
 
     prev_key = None
@@ -274,8 +242,8 @@ def main():
     idx = FeaturesetFields()
 
     lines = []
-    linesplit = linesplit = re.compile('[\t,\x01]')
-    for line in sys.stdin:
+    linesplit = re.compile('[\t,\x01]')
+    for line in dataset:
 
         row = linesplit.split(line.strip())
 
@@ -302,6 +270,3 @@ def main():
 
     if options.output_model_file:
         output_models(models, options)
-
-if __name__ == '__main__':
-    main()

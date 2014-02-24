@@ -25,7 +25,7 @@ def thetas(key):
     global _PARAMS
     if _PARAMS is None:
         _PARAMS = cPickle.load(open(
-            os.path.join('exercises', 'knowledge_params.pickle'), 'r'))
+            os.path.join('knowledge_model', 'knowledge_params.pickle'), 'r'))
     return _PARAMS['thetas'].get(key, None)
 
 
@@ -34,7 +34,7 @@ def components(key):
     global _PARAMS
     if _PARAMS is None:
         _PARAMS = cPickle.load(open(
-            os.path.join('exercises', 'knowledge_params.pickle'), 'r'))
+            os.path.join('knowledge_model', 'knowledge_params.pickle'), 'r'))
     return _PARAMS['components'].get(key, None)
 
 
@@ -52,7 +52,7 @@ class KnowledgeState(object):
     def __init__(self):
         self.data = {}
         # # note the following gets put in self.data through an @property
-        # self.random_features = numpy.zeros((RANDOM_FEATURE_LENGTH, 1))
+        self.data["random_features"] = numpy.zeros((RANDOM_FEATURE_LENGTH, 1))
         self.accuracy_models = defaultdict(model.AccuracyModel)
 
     @property
@@ -60,19 +60,21 @@ class KnowledgeState(object):
         """Return the 'random features' that capture past exercise history."""
         return self.data['random_features']
 
-    def update(self, exercise, problem_type, problem_number, correct):
+    def update(self, exercise, problem_type, correct):
         """Compute updated feature values given a new problem attempt."""
-        if problem_number != 1:
-            return
+        model = self.accuracy_models[exercise]
+        model.update(correct)
+        problem_number = model.total_done
+        if problem_number == 1:
 
-        rand_component_key = (exercise, problem_type, correct)
+            rand_component_key = (exercise, problem_type, correct)
 
-        if components(rand_component_key) is None:
-            # This exercise/ptype combo wasn't present during model training,
-            # so we can't update the random features.
-            return
+            if components(rand_component_key) is None:
+                # This exercise/ptype combo wasn't present during model
+                # training, so we can't update the random features.
+                return
 
-        self.random_features += components(rand_component_key)
+            self.data["random_features"] += components(rand_component_key)
 
     def predict(self, exercise):
         """Predict the probability of getting the next problem correct."""
