@@ -14,7 +14,7 @@ class Student(object):
 
     def __init__(self, student_id, num_abilities=1):
         self.student_id = str(student_id)
-        self.abilities = np.random.rand(num_abilities, 1)
+        self.abilities = np.random.randn(num_abilities, 1)
 
 
 class AssessmentItem(mirt_util.Parameters):
@@ -27,7 +27,7 @@ class AssessmentItem(mirt_util.Parameters):
         # We initialize the couplings for correct/incorrect responses to a
         # random normal distribution, adding one to the dimensionality to
         # account for bias.
-        self.W_correct[0] = np.random.rand(num_abilities + 1)
+        self.W_correct = np.random.rand(1, num_abilities + 1)
 
 
 class Assessment(object):

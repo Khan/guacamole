@@ -167,9 +167,11 @@ def conditional_energy_data(
 
 
 def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
-    """Sample the ability vector for this user, from the posterior over user
-    ability conditioned on the observed exercise performance.
-    use Metropolis-Hastings with Gaussian proposal distribution.
+    """Sample the ability vector for this user
+
+    Sample from the posterior over user ability conditioned on the observed
+    exercise performance. use Metropolis-Hastings with Gaussian proposal
+    distribution.
 
     This is just a wrapper around sample_abilities_diffusion.
     """
@@ -191,8 +193,8 @@ def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
     num_steps = options.sampling_num_steps
 
     abilities, Eabilities, _, _ = sample_abilities_diffusion(
-            theta, exercises_ind, correct, log_time_taken,
-            abilities, num_steps)
+        theta, exercises_ind, correct, log_time_taken,
+        abilities, num_steps)
 
     return abilities, Eabilities, user_index
 
@@ -293,8 +295,12 @@ def L_dL_singleuser(arg):
     correct = state['correct']
     exercises_ind = state['exercises_ind']
 
-    dL = Parameters(theta.num_abilities, len(exercises_ind))
+    dL_flat_allzeros = Parameters(
+        theta.num_abilities, len(exercises_ind)).flat()
 
+    dL_flat_allzeros[:] = 0
+    dL = Parameters(theta.num_abilities, theta.num_exercises,
+                    vals=dL_flat_allzeros)
     # pad the abilities vector with a 1 to act as a bias
     abilities = np.append(abilities.copy(),
                           np.ones((1, abilities.shape[1])),
@@ -334,24 +340,25 @@ def L_dL_singleuser(arg):
 
 
 def L_dL(theta_flat, user_states, num_exercises, options, pool):
-    """ calculate log likelihood and gradient wrt couplings of mIRT model """
+    """Calculate log likelihood and gradient wrt couplings of mIRT model """
 
     L = 0.
     theta = Parameters(options.num_abilities, num_exercises,
-                                 vals=theta_flat.copy())
+                       vals=theta_flat.copy())
 
-    nu = float(len(user_states))
+    num_users = float(len(user_states))
 
     # note that the nu gets divided back out below, so the regularization term
     # does not end up with a factor of nu.
-    L += options.regularization * nu * np.sum(theta_flat ** 2)
-    dL_flat = 2. * options.regularization * nu * theta_flat
+    L += options.regularization * num_users * np.sum(theta_flat ** 2)
+    dL_flat = 2. * options.regularization * num_users * theta_flat
     dL = Parameters(theta.num_abilities, theta.num_exercises,
-                              vals=dL_flat)
+                    vals=dL_flat)
 
     # also regularize the inverse of sigma, so it doesn't run to 0
-    L += np.sum(options.regularization * nu / theta.sigma_time ** 2)
-    dL.sigma_time += -2. * options.regularization * nu / theta.sigma_time ** 3
+    L += np.sum(options.regularization * num_users / theta.sigma_time ** 2)
+    dL.sigma_time += (-2. * options.regularization * num_users
+                      / theta.sigma_time ** 3)
 
     # TODO(jascha) this would be faster if user_states was divided into
     # minibatches instead of single students
@@ -378,8 +385,8 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
     # divide by log 2 so the answer is in bits instead of nats, and divide by
     # nu (the number of users) so that the magnitude of the log likelihood
     # stays reasonable even when trained on many users.
-    L /= np.log(2.) * nu
-    dL_flat /= np.log(2.) * nu
+    L /= np.log(2.) * num_users
+    dL_flat /= np.log(2.) * num_users
 
     return L, dL_flat
 
@@ -450,7 +457,7 @@ class MirtModel(object):
         for state in self.user_states:
             mn_a += state['abilities'][:, 0].T / float(len(self.user_states))
             cov_a += (state['abilities'][:, 0] ** 2).T / (
-                        float(len(self.user_states)))
+                float(len(self.user_states)))
         print >>sys.stderr, "<abilities>", mn_a,
         print >>sys.stderr, ", <abilities^2>", cov_a, ", ",
 
@@ -462,11 +469,10 @@ class MirtModel(object):
             self.theta.flat(),
             args=(
                 self.user_states, self.num_exercises, self.options, self.pool),
-            disp=0,
+            disp=1,
             maxfun=self.options.max_pass_lbfgs, m=100)
         self.theta = Parameters(self.options.num_abilities, self.num_exercises,
-                                     vals=theta_flat)
-
+                                vals=theta_flat)
         if self.options.correct_only:
             self.theta.sigma_time[:] = 1.
             self.theta.W_time[:, :] = 0.

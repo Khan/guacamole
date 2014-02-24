@@ -112,7 +112,7 @@ def get_cmd_line_options(arguments=None):
                             "analyze accuracy of predictions after model "
                             "training."))
     parser.add_option("-z", "--correct_only", action="store_true",
-                      default=False,
+                      default=True,
                       help=("Ignore response time, only model using "
                             "correctness."))
     parser.add_option("-r", "--resume_from_file", default='',
