@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 """An interactive utility to explore the workings of your IRT model.
-Usage: ./adaptive_pretest.py /path/to/model.json
-Then enter 1's and 0's according to whether the student answered correctly,
-and optionally the amount of time it took them to respond.
-Enter numbers representing how long the problem took, if you choose.
-The output will include the model's estimation of the student's
-accuracy on each of the assessment items as well as their overall
+
+Usage:
+./adaptive_pretest.py /path/to/model.json
+
+Then enter 1's and 0's
+according to whether the student answered correctly, and optionally the amount
+of time it took them to respond. Enter numbers representing how long the
+problem took, if you choose. The output will include the model's estimation of
+the student's accuracy on each of the assessment items as well as their overall
 score ()
 """
 import json
@@ -20,7 +23,7 @@ def interactive_test(test_engine):
     """A simple command line interface to mirt parameters."""
 
     history = []
-    use_time = raw_input("Are you going to use time as a feature [y/n]: ")
+    use_time = raw_input("Use time as a feature? [y/n]: ")
     # Accept any answer starting with y or Y as a yes
     time = use_time[0] in ['y', 'Y']
 

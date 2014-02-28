@@ -1,5 +1,4 @@
-"""A very simple engine that randomly suggests problems from exercise_ids
-"""
+"""A very simple engine that randomly suggests problems from exercise_ids"""
 
 import random
 

@@ -30,25 +30,29 @@ class MIRTEngine(engine.Engine):
         self.max_length = model_data['max_length']
         self.max_time_taken = model_data['max_time_taken']
 
+    def eligible_exercises(self, history):
+        """An exercise may be seen at most once"""
+        # Ensure we are only choosing from exercises the user has not seen
+        seen_exs = set(h['exercise'] for h in history)
+        return [e for e in self.exercises() if e not in seen_exs]
+
     def next_suggested_item(self, history):
         """Return an ItemSuggestion for this Engine's preferred next item."""
-        # we want to be sure we are only choosing from exercises the user has
-        # not seen
-        seen_exs = set(h['exercise'] for h in history)
-        eligible_exs = [e for e in self.exercises() if e not in seen_exs]
         # update ability estimates only once -- outside the loop
         self._update_abilities(history)
 
         max_info = float("-inf")
         max_info_ex = None
-        for ex in eligible_exs:
-            fi = self.fisher_information(history, ex)
-            if fi > max_info:
-                max_info = fi
-                max_info_ex = ex
-        ex = max_info_ex
+        for exercise in self.eligible_exercises(history):
+            fisher_information = self.fisher_information(history, exercise)
+            print 'fisher info'
+            print fisher_information
+            if fisher_information > max_info:
+                max_info = fisher_information
+                max_info_ex = exercise
+        exercise = max_info_ex
 
-        return engine.ItemSuggestion(ex)
+        return engine.ItemSuggestion(exercise)
 
     def estimated_exercise_accuracies(self, history):
         """Returns a dictionary where the keys are all the exercise names
@@ -120,6 +124,21 @@ class MIRTEngine(engine.Engine):
         """Return the slug of all exercises as a list"""
         return self.exercise_ind_dict.keys()
 
+    def is_complete(self, history):
+        """Return True when the exercise is complete.
+
+        This happens when it has reached its max length or has run out of
+        eligible items
+        """
+        if super(MIRTEngine, self).is_complete(history):
+            return True
+        else:
+            # The assessment is complete when there are no more possible
+            # exercises
+            if len(self.eligible_exercises(history)) == 0:
+                return True
+        return False
+
     def _update_abilities(self, history, use_mean=True, num_steps=200,
                           ignore_analytics=False):
         """Take the history and update the ability estimate."""
@@ -135,7 +154,7 @@ class MIRTEngine(engine.Engine):
         ex = lambda h: engine.ItemResponse(h).exercise
         exercises = np.asarray([ex(h) for h in history])
         exercises_ind = mirt_util.get_exercises_ind(
-                exercises, self.exercise_ind_dict)
+            exercises, self.exercise_ind_dict)
 
         is_correct = lambda h: engine.ItemResponse(h).correct
         correct = np.asarray([is_correct(h) for h in history]).astype(int)
@@ -149,9 +168,9 @@ class MIRTEngine(engine.Engine):
         log_time_taken = np.log(time_taken)
 
         sample_abilities, _, mean_abilities, stdev = (
-                mirt_util.sample_abilities_diffusion(
-                    self.theta, exercises_ind, correct, log_time_taken,
-                    self.abilities, num_steps=num_steps))
+            mirt_util.sample_abilities_diffusion(
+                self.theta, exercises_ind, correct, log_time_taken,
+                self.abilities, num_steps=num_steps))
 
         self.abilities = mean_abilities if use_mean else sample_abilities
         self.abilities_stdev = stdev
