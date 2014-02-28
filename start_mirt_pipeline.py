@@ -25,7 +25,7 @@ import datetime
 import multiprocessing
 import os
 
-from mirt import mirt_train_EM, mirt_npz_to_json, generate_predictions
+from mirt import mirt_train_EM, generate_predictions
 from train_util import model_training_util
 
 # Necessary on some systems to make sure all cores are used. If not all
@@ -74,6 +74,24 @@ def get_command_line_arguments(arguments=None):
         default=os.path.dirname(
             os.path.abspath(__file__)) + '/sample_data/output/',
         help=("The directory to write output"))
+    parser.add_argument(
+        "-m", "--model",
+        default=os.path.dirname(
+            os.path.abspath(__file__)) + '/sample_data/output/model.json',
+        help=("The location of the model (to write if training, and to read if"
+              " visualizing or testing."))
+    parser.add_argument(
+        "-g", "--generate", default=False,
+        help=("Generate fake training data."))
+    parser.add_argument(
+        "-r", "--train", default=False,
+        help=("Train a model from training data."))
+    parser.add_argument(
+        "-v", "--visualize", default=False,
+        help=("Visualize a trained model."))
+    parser.add_argument(
+        "-s", "--test", default=False,
+        help=("Take an adaptive test from a trained model."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
@@ -100,7 +118,7 @@ def get_time_arguments(arguments):
     return time_arguments
 
 
-def get_latest_npz_file_name(path):
+def get_latest_parameter_file_name(path):
     """Gets the most recent of many parameter files in a directory.
 
     There will be many .npz files written; we take the last one.
@@ -168,20 +186,12 @@ def generate_roc_curve_from_model(
     test_file = arguments.output + 'test.responses'
     param_str = gen_param_str(abilities, datetime_str, time)
     out_dir_name = arguments.output + 'mirt/' + param_str + '/'
-    last_npz = get_latest_npz_file_name(out_dir_name)
-    print 'getting last npz'
-    print last_npz
-    json_outfile = get_json_path(arguments) + param_str + '.json'
-    print 'writing json'
-    print json_outfile
-    mirt_npz_to_json.mirt_npz_to_json(
-        last_npz, outfilename=json_outfile, slug=param_str,
-        title='math', description='math')
+    params = get_latest_parameter_file_name(out_dir_name)
     roc_file = roc_dir + param_str + '.roc'
     print 'writing to roc file'
     print roc_file
     generate_predictions.load_and_simulate_assessment(
-        json_outfile, roc_file, test_file)
+        params, roc_file, test_file)
 
 
 def run_with_arguments(arguments):

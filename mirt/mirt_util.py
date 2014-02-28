@@ -30,6 +30,7 @@ import warnings
 import multiprocessing
 import time
 
+import mirt.mirt_npz_to_json
 from train_util.regression_util import sigmoid
 
 
@@ -499,10 +500,12 @@ class MirtModel(object):
             user_state['abilities'] *= coupling_sign.T
 
         # save state as a .npz
-        np.savez("%s_epoch=%d.npz" % (self.options.output, epoch),
-                 theta=self.theta,
-                 exercise_ind_dict=self.exercise_ind_dict,
-                 max_time_taken=self.options.max_time_taken)
+        mirt.mirt_npz_to_json.data_to_json(
+            theta=self.theta,
+            exercise_ind_dict=self.exercise_ind_dict,
+            max_time_taken=self.options.max_time_taken,
+            outfilename="%s_epoch=%d.json" % (self.options.output, epoch),
+            )
 
         self.write_csv(epoch, self.exercise_ind_dict)
 

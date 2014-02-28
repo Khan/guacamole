@@ -24,8 +24,10 @@ import sys
 def mirt_npz_to_json(npz_file, outfilename=None, slug=None, title=None,
                      description=None):
     """Load an npz file and either print it or write to a file."""
-    model = numpy.load(npz_file)
-
+    if type(npz_file) == 'str':
+        model = numpy.load(npz_file)
+    else:
+        model = npz_file
     theta = model["theta"][()]
     exercise_ind_dict = model["exercise_ind_dict"][()]
 
@@ -71,6 +73,30 @@ def mirt_npz_to_json(npz_file, outfilename=None, slug=None, title=None,
             outfile.write(json_data)
     else:
         print json_data
+
+
+def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,
+                 slug='Test', title='test parameters', description='parameters'
+                 'for an adaptive test'):
+
+    out_data = {
+        "engine_class": "MIRTEngine",
+        "slug": slug,
+        "title": title,
+        "description": description,
+        # MIRT specific data
+        "params": {
+            "exercise_ind_dict": exercise_ind_dict,
+            "theta_flat": theta.flat().tolist(),
+            "num_abilities": theta.num_abilities,
+            "max_length": 15,
+            "max_time_taken": max_time_taken}
+        }
+
+    json_data = json.dumps(out_data, indent=4)
+
+    with open(outfilename, 'w') as outfile:
+        outfile.write(json_data)
 
 
 def main():

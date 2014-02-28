@@ -132,8 +132,8 @@ def print_sample_data():
     """Generate sample assessment data and print it to stdout"""
     assessments = generate_sample_data()
     for assessment in assessments:
-        for string in assessment.response_strings():
-            print string
+        for response in assessment.response_strings():
+            print response
 
 if __name__ == '__main__':
     print_sample_data()
