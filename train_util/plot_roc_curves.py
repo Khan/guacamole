@@ -12,31 +12,28 @@ probability correct on that exercise.  Each file contains data for a different
 curve.
 
 TODO(jace): Maybe take command line args to override the column index
-assumption.  But for right now this is simply built to work with output
-of accuracy_model_train.py.
+assumption.
 """
 import fileinput
 import itertools
 import re
 import warnings
 
-#import matplotlib
-#matplotlib.use('Agg')  # no displayed figures - call before loading pylab
 import matplotlib.pyplot as plt
 import numpy as np
 
-LINES = ["-+", "--D", "-.s", ":*", "-^", "--|", "-._", ":"]
+PLOT_LINES = ["-+", "--D", "-.s", ":*", "-^", "--|", "-._", ":"]
 
 
 def get_correct_predicted(lines):
-    """Retrieve the correctness and predicted accuracy for each response."""
-    linesplit = re.compile('[, \x01]')
+    """Parse each comma-separated line"""
+    linesplit = re.compile('[, ]')
     lines_split = [linesplit.split(line) for line in lines]
     try:
         lines = np.asarray(lines_split)
         correct = lines[:, 0].astype('float')
         predicted = lines[:, 1].astype('float')
-    except ValueError:
+    except IndexError:
         # deal with the case where the last row has the wrong number
         # of columns -- eg, if you are looking at a csv file as it's
         # being written
@@ -45,15 +42,11 @@ def get_correct_predicted(lines):
         correct = lines[:, 0].astype('float')
         predicted = lines[:, 1].astype('float')
 
-    return predicted, correct
+    return correct, predicted
 
 
 def calc_roc_curve(correct, predicted):
-    """Generate roc curve data given predictions and outcomes.
-
-    Take a list of actual and predicted accuracies, return a tuple
-    with info to generate a roc curve.
-    """
+    """Calculate true positive and negative values for various cutoffs"""
     thresholds = np.arange(-0.01, 1.02, 0.01)
     true_pos = np.zeros(thresholds.shape)
     true_neg = np.zeros(thresholds.shape)
@@ -72,10 +65,11 @@ def calc_roc_curve(correct, predicted):
     return true_pos, true_neg
 
 
-def draw_roc_curve(name, label, prediction):
-    """Generate and draw roc curves given labels and predictions"""
-    plt.figure(figsize=[15, 12])
-    true_pos, true_neg = calc_roc_curve(label, prediction)
+def draw_roc_curve(name, lines):
+    """Plot each point along a roc curve on a pyplot window"""
+    line_cycler = itertools.cycle(PLOT_LINES)
+    correct, predicted = get_correct_predicted(lines)
+    true_pos, true_neg = calc_roc_curve(correct, predicted)
 
     # grab the base of the filename
     name = name.split('/')[-1].split('.')[0]
@@ -84,7 +78,29 @@ def draw_roc_curve(name, label, prediction):
         warnings.warn("Warning.  If name starts with an underscore, "
                       "the label won't display.")
 
-    plt.plot(1 - true_neg, true_pos, next(itertools.cycle(LINES)), label=name)
+    plt.plot(1 - true_neg,
+             true_pos,
+             next(line_cycler),
+             label=name)
+
+
+def main():
+    """Read in files and display them on a pyplot window"""
+    plt.figure(1)
+
+    lines = []
+    filename = None
+    for line in fileinput.input():
+        if not filename:
+            filename = fileinput.filename()
+        if fileinput.isfirstline() and len(lines):
+            draw_roc_curve(filename, lines)
+            filename = fileinput.filename()
+            lines = []
+        lines.append(line)
+
+    draw_roc_curve(fileinput.filename(), lines)
+
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('ROC Curves')
@@ -93,25 +109,6 @@ def draw_roc_curve(name, label, prediction):
     plt.ylim([0, 1])
     plt.grid()
     plt.show()
-    plt.savefig(["%s_roc_curve.pdf" % name])
-
-
-def main():
-    """Read in files with labels and predictions, display on graph."""
-    lines = []
-    filename = None
-    for line in fileinput.input():
-        if not filename:
-            filename = fileinput.filename()
-        if fileinput.isfirstline() and len(lines):
-            correct, predicted = get_correct_predicted(lines)
-            draw_roc_curve(filename, correct, predicted)
-            filename = fileinput.filename()
-            lines = []
-        lines.append(line)
-
-    correct, predicted = get_correct_predicted(lines)
-    draw_roc_curve(fileinput.filename(), correct, predicted)
 
 
 if __name__ == '__main__':
