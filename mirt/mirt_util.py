@@ -22,6 +22,7 @@ functions:
 class Parameters, which holds parameters for a MIRT model.
 
 """
+import json
 from multiprocessing import Pool
 import numpy as np
 import scipy
@@ -30,7 +31,6 @@ import warnings
 import multiprocessing
 import time
 
-import mirt.mirt_npz_to_json
 from train_util.regression_util import sigmoid
 
 
@@ -500,7 +500,7 @@ class MirtModel(object):
             user_state['abilities'] *= coupling_sign.T
 
         # save state as a .npz
-        mirt.mirt_npz_to_json.data_to_json(
+        data_to_json(
             theta=self.theta,
             exercise_ind_dict=self.exercise_ind_dict,
             max_time_taken=self.options.max_time_taken,
@@ -538,3 +538,27 @@ class MirtModel(object):
                         self.theta.W_time[exercise_index, time_index], ','),
                 print >>outfile, self.theta.sigma_time[exercise_index], ',',
                 print >>outfile, exercise
+
+
+def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,
+                 slug='Test', title='test parameters', description='parameters'
+                 'for an adaptive test'):
+
+    out_data = {
+        "engine_class": "MIRTEngine",
+        "slug": slug,
+        "title": title,
+        "description": description,
+        # MIRT specific data
+        "params": {
+            "exercise_ind_dict": exercise_ind_dict,
+            "theta_flat": theta.flat().tolist(),
+            "num_abilities": theta.num_abilities,
+            "max_length": 15,
+            "max_time_taken": max_time_taken}
+        }
+
+    json_data = json.dumps(out_data, indent=4)
+
+    with open(outfilename, 'w') as outfile:
+        outfile.write(json_data)
