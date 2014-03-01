@@ -365,8 +365,8 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
     # TODO(jascha) this would be faster if user_states was divided into
     # minibatches instead of single students
     if pool is None:
-        rslts = map(L_dL_singleuser,
-                    [(theta, state, options) for state in user_states])
+        rslts = [L_dL_singleuser(theta, state, options)
+                 for state in user_states]
     else:
         rslts = pool.map(L_dL_singleuser,
                          [(theta, state, options) for state in user_states],

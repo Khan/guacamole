@@ -128,8 +128,8 @@ def get_cmd_line_options(arguments=None):
     if options.output == '':
         # default filename
         options.output = "mirt_file=%s_abilities=%d_time=%s" % (
-                options.file, options.num_abilities,
-                datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+            options.file, options.num_abilities,
+            datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     return options
 
@@ -148,8 +148,8 @@ def create_user_state(lines, exercise_ind_dict, options):
     exercises_ind = np.array(exercises_ind)
     abilities = np.random.randn(options.num_abilities, 1)
 
-    # cut out any duplicate exercises in the training data for a single user
-    # NOTE if you allow duplicates, you need to change the way the gradient
+    # Cut out any duplicate exercises in the training data for a single user
+    # NOTE: if you allow duplicates, you need to change the way the gradient
     # is computed as well.
     _, idx = np.unique(exercises_ind, return_index=True)
     exercises_ind = exercises_ind[idx]
@@ -184,9 +184,10 @@ def emit_features(user_states, theta, options, split_desc):
             prediction = mirt_util.conditional_probability_correct(
                 abilities, theta, exercises_ind[i:(i + 1)])
 
-            print >>f, "%d," % correct[i],
-            print >>f, "%.4f," % prediction[-1],
-            print >>f, ",".join(["%.4f" % a for a in abilities])
+            f.write("%d, " % correct[i])
+            f.write("%.4f, " % prediction[-1])
+            f.write(",".join(["%.4f" % a for a in abilities]))
+            f.write('\n')
 
     f.close()
 
@@ -211,7 +212,7 @@ def get_data_from_file(options, exercise_ind_dict):
     user_states_test = []
 
     idx_pl = get_indexer(options)
-    print >>sys.stderr, "loading data"
+    sys.stderr.write("loading data")
     prev_user = None
     attempts = []
     linesplit = re.compile('[\t,\x01]')
@@ -247,7 +248,7 @@ def get_data_from_file(options, exercise_ind_dict):
         if options.training_set_size < 1.0:
             training_cutoff = int(len(user_states) * options.training_set_size)
             user_states_train += copy.deepcopy(user_states[:training_cutoff])
-            print >>sys.stderr, len(user_states_train)
+            sys.stderr.write(str(len(user_states_train)) + '\n')
             if replica_num == 0:
                 # we don't replicate the test data (only training data)
                 user_states_test = copy.deepcopy(user_states[training_cutoff:])
@@ -260,15 +261,15 @@ def get_data_from_file(options, exercise_ind_dict):
 
 
 def run(options):
-    print >>sys.stderr, "Starting main.", options  # DEBUG
+    sys.stderr.write("Starting main." + str(options) + '\n')  # DEBUG
     exercise_ind_dict = defaultdict(generate_exercise_ind)
     user_states, user_states_train, user_states_test = get_data_from_file(
         options, exercise_ind_dict)
 
-    print >>sys.stderr, "Training dataset, %d students" % (len(user_states))
+    sys.stderr.write("Training dataset, %d students\n" % (len(user_states)))
 
-    # initialize the parameters
-    print >>sys.stderr, "%d exercises" % (num_exercises)
+    # Initialize the parameters
+    sys.stderr.write("%d exercises\n" % (num_exercises))
     # we won't be adding any more exercises
     exercise_ind_dict = dict(exercise_ind_dict)
 
@@ -279,8 +280,8 @@ def run(options):
         # data file the model in resume_from_file was trained on.
         resume_from_model = np.load(options.resume_from_file)
         exercise_ind_dict = resume_from_model['exercise_ind_dict']
-        print >>sys.stderr, "Loaded parameters from %s" % (
-            options.resume_from_file)
+        sys.stderr.write("Loaded parameters from %s\n" % (
+            options.resume_from_file))
 
     model = mirt_util.MirtModel(
         options, num_exercises, exercise_ind_dict, user_states)
