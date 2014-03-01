@@ -55,18 +55,31 @@ class ItemResponse(object):
 
     @property
     def time_taken(self):
+        """Getter for the amount of time taken (in seconds)to complete the item
+
+        Returns: an int representing seconds taken
+        """
         return self.data.get("time_taken")
 
     @property
     def correct(self):
+        """Getter for whether the item was completed correctly.
+
+        Returns: a boolean."""
         return self.data.get("correct")
 
     @property
     def exercise(self):
+        """Getter for whether the slug of the exercise connected with the item
+
+        Returns: a string."""
         return self.data.get("exercise")
 
     @staticmethod
     def timestamp():
+        """Getter for the timestamp connected with the item
+
+        Returns: a string in UTC."""
         utc_datetime = datetime.datetime.utcnow()
         return utc_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
 
