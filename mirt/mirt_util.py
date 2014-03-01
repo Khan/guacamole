@@ -409,8 +409,8 @@ class MirtModel(object):
             resume_from_model = np.load(options.resume_from_file)
             self.theta = resume_from_model['theta'][()]
             exercise_ind_dict = resume_from_model['exercise_ind_dict']
-            print >>sys.stderr, "Loaded parameters from %s" % (
-                options.resume_from_file)
+            sys.stderr.write("Loaded parameters from %s" % (
+                options.resume_from_file))
         self.num_exercises = num_exercises
         self.pool = None
         if options.workers > 1:
@@ -426,19 +426,19 @@ class MirtModel(object):
         #theta, exercises_ind, correct, log_time_taken, abilities, num_steps)
         if self.pool is None:
             results = [sample_abilities_diffusion_wrapper(
-                        self.theta, self.user_states[ind], self.options, ind)
-                        for ind in range(len(self.user_states))]
+                       self.theta, self.user_states[ind], self.options, ind)
+                       for ind in range(len(self.user_states))]
         else:
             results = self.pool.map(
                 sample_abilities_diffusion_wrapper,
                 [(self.theta, self.user_states[ind], self.options, ind)
-                for ind in range(len(self.user_states))],
+                 for ind in range(len(self.user_states))],
                 chunksize=100)
         return results
 
     def run_em_step(self, epoch):
         """Run a single step of expectation maximization"""
-        print >>sys.stderr, "epoch %d, " % epoch,
+        sys.stderr.write("epoch %d, " % epoch)
         # Expectation step
         # Compute (and print) the energies during learning as a diagnostic.
         # These should decrease.
@@ -450,8 +450,8 @@ class MirtModel(object):
             abilities, El, ind = result
             self.user_states[ind]['abilities'] = abilities.copy()
             average_energy += El / float(len(self.user_states))
-        print >>sys.stderr, "E joint log L + const %f, " % (
-                - average_energy / np.log(2.)),
+        sys.stderr.write("E joint log L + const %f, " % (
+                         - average_energy / np.log(2.)))
 
         # debugging info -- accumulate mean and covariance of abilities vector
         mn_a = 0.
@@ -460,8 +460,8 @@ class MirtModel(object):
             mn_a += state['abilities'][:, 0].T / float(len(self.user_states))
             cov_a += (state['abilities'][:, 0] ** 2).T / (
                 float(len(self.user_states)))
-        print >>sys.stderr, "<abilities>", mn_a,
-        print >>sys.stderr, ", <abilities^2>", cov_a, ", ",
+        sys.stderr.write("<abilities>", mn_a)
+        sys.stderr.write(", <abilities^2>", cov_a, ", ")
 
         # Maximization step
         old_theta_flat = self.theta.flat()
@@ -479,13 +479,13 @@ class MirtModel(object):
             self.theta.W_time[:, :] = 0.
 
         # Print debugging info on the progress of the training
-        print >>sys.stderr, "M conditional log L %f, " % (-L),
-        print >>sys.stderr, "reg penalty %f, " % (
-                self.options.regularization * np.sum(theta_flat ** 2)),
-        print >>sys.stderr, "||couplings|| %f, " % (
-                np.sqrt(np.sum(self.theta.flat() ** 2))),
-        print >>sys.stderr, "||dcouplings|| %f" % (
-                np.sqrt(np.sum((theta_flat - old_theta_flat) ** 2)))
+        sys.stderr.write("M conditional log L %f, " % (-L))
+        sys.stderr.write("reg penalty %f, " % (
+            self.options.regularization * np.sum(theta_flat ** 2)))
+        sys.stderr.write("||couplings|| %f, " % (
+            np.sqrt(np.sum(self.theta.flat() ** 2))))
+        sys.stderr.write("||dcouplings|| %f\n" % (
+            np.sqrt(np.sum((theta_flat - old_theta_flat) ** 2))))
 
         # Maintain a consistent directional meaning of a
         # high/low ability estimate.  We always prefer higher ability to
@@ -513,31 +513,32 @@ class MirtModel(object):
         """Save state as .csv - just for easy debugging inspection"""
         with open("%s_epoch=%d.csv" % (
                 self.options.output, epoch), 'w+') as outfile:
-            exercises = sorted(exercise_ind_dict.keys(),
-                    key=lambda nm: self.theta.W_correct[exercise_ind_dict[nm],
-                    -1])
+            exercises = sorted(
+                exercise_ind_dict.keys(),
+                key=lambda nm: self.theta.W_correct[exercise_ind_dict[nm], -1])
 
-            print >>outfile, 'correct bias,',
+            outfile.write('correct bias,')
             for coupling_index in range(self.options.num_abilities):
-                print >>outfile, "correct coupling %d," % coupling_index,
-            print >>outfile, 'time bias,',
+                outfile.write("correct coupling %d, " % coupling_index)
+            outfile.write('time bias, ')
             for time_coupling_index in range(self.options.num_abilities):
-                print >>outfile, "time coupling %d," % time_coupling_index,
-            print >>outfile, 'time variance,',
-            print >>outfile, 'exercise name'
+                outfile.write("time coupling %d," % time_coupling_index)
+            outfile.write('time variance, exercise name\n')
+
             for exercise in exercises:
                 exercise_index = exercise_ind_dict[exercise]
-                print >>outfile, self.theta.W_correct[exercise_index, -1], ',',
+                outfile.write(str(
+                    self.theta.W_correct[exercise_index, -1]) + ',')
                 for index in range(self.options.num_abilities):
-                    print >>outfile, (
-                        self.theta.W_correct[exercise_index, index], ','),
-                print >>outfile, (
-                    self.theta.W_time[exercise_index, -1], ','),
+                    outfile.write(str(
+                        self.theta.W_correct[exercise_index, index]) + ',')
+                outfile.write(
+                    str(self.theta.W_time[exercise_index, -1]) + ',')
                 for time_index in range(self.options.num_abilities):
-                    print >>outfile, (
-                        self.theta.W_time[exercise_index, time_index], ','),
-                print >>outfile, self.theta.sigma_time[exercise_index], ',',
-                print >>outfile, exercise
+                    outfile.write(str(
+                        self.theta.W_time[exercise_index, time_index]) + ',')
+                outfile.write(str(self.theta.sigma_time[exercise_index]) + ',')
+                outfile.write(exercise + '\n')
 
 
 def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,
