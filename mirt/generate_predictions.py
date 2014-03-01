@@ -83,7 +83,7 @@ def load_and_simulate_assessment(
             if user != new_user:
                 # Generate the datapoint for the existing user history
                 if user:
-                    write_roc_datapoint(
+                    yield write_roc_datapoint(
                         history, evaluation_indexes, model, outfile)
 
                 # Reset all of the variables.
@@ -166,8 +166,10 @@ def write_roc_datapoint(history, evaluation_indexes, model, outfile):
 
         # Finally, write the actual accuracy of the student on the exercise,
         # followed by the predicted accuracy.
+        roc_point = []
         if evaluation_item['correct']:
-            outfile.write('1,')
+            roc_point.append(1)
         else:
-            outfile.write('0,')
-        outfile.write(str(acc) + '\n')
+            roc_point.append(0)
+        roc_point.append(acc)
+        yield roc_point

@@ -25,7 +25,7 @@ import datetime
 import multiprocessing
 import os
 
-from mirt import mirt_train_EM, generate_predictions
+from mirt import mirt_train_EM, generate_predictions, visualize
 from train_util import model_training_util
 
 # Necessary on some systems to make sure all cores are used. If not all
@@ -87,7 +87,7 @@ def get_command_line_arguments(arguments=None):
         "-r", "--train", default=False,
         help=("Train a model from training data."))
     parser.add_argument(
-        "-v", "--visualize", default=False,
+        "-v", "--visualize", default=True,
         help=("Visualize a trained model."))
     parser.add_argument(
         "-s", "--test", default=False,
@@ -188,9 +188,7 @@ def generate_roc_curve_from_model(
     out_dir_name = arguments.output + 'mirt/' + param_str + '/'
     params = get_latest_parameter_file_name(out_dir_name)
     roc_file = roc_dir + param_str + '.roc'
-    print 'writing to roc file'
-    print roc_file
-    generate_predictions.load_and_simulate_assessment(
+    return generate_predictions.load_and_simulate_assessment(
         params, roc_file, test_file)
 
 
@@ -215,8 +213,10 @@ def run_with_arguments(arguments):
         for time in get_time_arguments(arguments):
             generate_model_with_parameters(
                 arguments, abilities, time, datetime_str)
-            generate_roc_curve_from_model(
+            roc_curve = generate_roc_curve_from_model(
                 arguments, abilities, time, datetime_str)
+    if arguments.visualize:
+        visualize(roc_curve)
 
     print
     print "If you're running this script somewhere you can't see matplotlib, "
