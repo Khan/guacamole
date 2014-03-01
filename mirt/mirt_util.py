@@ -470,7 +470,6 @@ class MirtModel(object):
             self.theta.flat(),
             args=(
                 self.user_states, self.num_exercises, self.options, self.pool),
-            disp=1,
             maxfun=self.options.max_pass_lbfgs, m=100)
         self.theta = Parameters(self.options.num_abilities, self.num_exercises,
                                 vals=theta_flat)

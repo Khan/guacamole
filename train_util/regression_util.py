@@ -14,9 +14,9 @@ def logistic_log_regression(features, correct):
     theta_init = theta_init.reshape((num_features))
 
     theta = scipy.optimize.optimize.fmin_bfgs(
-                logL, theta_init, fprime=dlogLdtheta,
-                args=(features, correct),
-                maxiter=1000)
+        logL, theta_init, fprime=dlogLdtheta,
+        args=(features, correct),
+        maxiter=1000)
 
     return theta
 
