@@ -1,3 +1,4 @@
+"""Extend the Engine model to provide a adaptive pretest engine."""
 import numpy as np
 
 import engine
@@ -87,7 +88,7 @@ class MIRTEngine(engine.Engine):
         """
         # use lots of steps when estimating score to make
         # the score seeem close to deterministic
-        self._update_abilities(history, num_steps=1000)
+        self._update_abilities(history, num_steps=50)
 
         predicted_accuracies = np.asarray([
             self.estimated_exercise_accuracy(history, ex, False)

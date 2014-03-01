@@ -28,6 +28,7 @@ class AssessmentItem(mirt_util.Parameters):
         # random normal distribution, adding one to the dimensionality to
         # account for bias.
         self.W_correct = np.random.rand(1, num_abilities + 1)
+        self.W_correct[:-1] = self.W_correct + 1
 
 
 class Assessment(object):
@@ -115,7 +116,7 @@ class StudentAssessment(object):
                 ',')
 
 
-def generate_sample_data(num_students=5000, num_items=5):
+def generate_sample_data(num_students=50, num_items=10):
     """Generate a series of student assessments and simulate completing them
     """
     students = [Student(student_id) for student_id in range(num_students)]

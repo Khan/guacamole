@@ -128,12 +128,6 @@ def get_latest_parameter_file_name(path):
     return path + npz_files[-1]
 
 
-def get_json_path(arguments):
-    """Output the location of the place jsons will be stored."""
-    mirt_dir = arguments.output + 'mirt/'
-    return mirt_dir + 'jsons/'
-
-
 def main():
     """Gets arguments from the command line and runs with those arguments."""
     arguments = get_command_line_arguments()
@@ -143,10 +137,8 @@ def main():
 def make_necessary_directiories(arguments):
     """Ensure that output directories for the data we'll be writing exist.
     """
-    json_dir = get_json_path(arguments)
-    mirt_dir = arguments.output + 'mirt/'
-    roc_dir = mirt_dir + 'rocs/'
-    model_training_util.mkdir_p([json_dir, mirt_dir, roc_dir])
+    roc_dir = arguments.output + 'rocs/'
+    model_training_util.mkdir_p([roc_dir])
 
 
 def gen_param_str(abilities, datetime_str, time):
@@ -161,7 +153,7 @@ def generate_model_with_parameters(
     """Trains a model with the given parameters, saving results
     """
     param_str = gen_param_str(abilities, datetime_str, time)
-    out_dir_name = arguments.output + 'mirt/' + param_str + '/'
+    out_dir_name = arguments.output + param_str + '/'
     model_training_util.mkdir_p(out_dir_name)
     # to set more fine-grained parameters about MIRT training, look at
     # the arguments at mirt/mirt_train_EM.py
@@ -181,11 +173,10 @@ def generate_roc_curve_from_model(
         arguments, abilities, time, datetime_str):
     """Read results from each model trained and generate roc curves."""
     # There will be many .npz files written; we take the last one.
-    mirt_dir = arguments.output + 'mirt/'
-    roc_dir = mirt_dir + 'rocs/'
+    roc_dir = arguments.output + 'rocs/'
     test_file = arguments.output + 'test.responses'
     param_str = gen_param_str(abilities, datetime_str, time)
-    out_dir_name = arguments.output + 'mirt/' + param_str + '/'
+    out_dir_name = arguments.output + param_str + '/'
     params = get_latest_parameter_file_name(out_dir_name)
     roc_file = roc_dir + param_str + '.roc'
     return generate_predictions.load_and_simulate_assessment(
@@ -216,16 +207,12 @@ def run_with_arguments(arguments):
             roc_curve = generate_roc_curve_from_model(
                 arguments, abilities, time, datetime_str)
         params = gen_param_str(abilities, datetime_str, time)
+        out_dir_name = arguments.output + params + '/'
+        model = get_latest_parameter_file_name(out_dir_name)
         if arguments.visualize:
+            print 'visualizing for %s' % model
             visualize.show_roc({params: [r for r in roc_curve]})
-
-    print
-    print "If you're running this script somewhere you can't see matplotlib, "
-    print "copy %s* to somewhere you can see it, then run " % arguments.output
-    print "mirt/rocs/train_util/plot_roc_curves.py rocs/* on that machine."
-    print
-    print "Generated JSON MIRT models are in %s " % get_json_path(arguments)
-    # TODO(eliana): Modify to automatically save pdfs of the roc curves.
+            visualize.show_exercises(model)
 
 if __name__ == '__main__':
     main()

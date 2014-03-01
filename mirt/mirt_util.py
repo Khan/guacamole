@@ -39,8 +39,9 @@ class Parameters(object):
     Holds the parameters for a MIRT model.  Also used to hold the gradients
     for each parameter during training.
     """
-    def __init__(self, num_abilities, num_exercises, vals=None):
-        """ vals is a 1d array holding the flattened parameters """
+    def __init__(self, num_abilities, num_exercises, vals=None,
+                 exercise_ind_dict=None):
+        """vals is a 1d array holding the flattened parameters """
         self.num_abilities = num_abilities
         self.num_exercises = num_exercises
         if vals is None:
@@ -60,6 +61,7 @@ class Parameters(object):
                 (-1, num_abilities + 1))
             # the standard deviation for the response time Gaussian
             self.sigma_time = vals[2 * num_couplings:].reshape((-1))
+            self.exercise_ind_dict = exercise_ind_dict
 
     def flat(self):
         """Returns a concatenation of the parameters for saving."""
@@ -91,8 +93,7 @@ def get_exercises_ind(exercise_names, exercise_ind_dict):
     return inds
 
 
-def conditional_probability_correct(abilities, theta, exercises_ind):
-
+def conditional_probability_correct(abilities, ex_parameters, exercises_ind):
     """Predict the probabilities of getting questions correct for a set of
     exercise indices, given model parameters in couplings and the
     abilities vector for the user.
@@ -113,8 +114,8 @@ def conditional_probability_correct(abilities, theta, exercises_ind):
     # Pad the abilities vector with a 1 to act as a bias.
     # The shape of abilities will become (a+1, 1).
     abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
-    W_correct = theta.W_correct[exercises_ind, :]
-    Z = sigmoid(np.dot(W_correct, abilities))
+    difficulties = ex_parameters.W_correct[exercises_ind, :]
+    Z = sigmoid(np.dot(difficulties, abilities))
     Z = np.reshape(Z, Z.size)  # flatten to 1-d ndarray
     return Z
 
@@ -193,7 +194,8 @@ def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
 
     num_steps = options.sampling_num_steps
 
-    abilities, Eabilities, _, _ = sample_abilities_diffusion(
+    #abilities, Eabilities, _, _ = sample_abilities_diffusion(
+    _, Eabilities, abilities, _ = sample_abilities_diffusion(
         theta, exercises_ind, correct, log_time_taken,
         abilities, num_steps)
 
@@ -365,8 +367,8 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
     # TODO(jascha) this would be faster if user_states was divided into
     # minibatches instead of single students
     if pool is None:
-        rslts = [L_dL_singleuser(theta, state, options)
-                 for state in user_states]
+        rslts = map(L_dL_singleuser, [(theta, state, options)
+                    for state in user_states])
     else:
         rslts = pool.map(L_dL_singleuser,
                          [(theta, state, options) for state in user_states],
@@ -422,8 +424,6 @@ class MirtModel(object):
     def get_results(self):
         """Samples the ability vectors for the students in the data"""
 
-        #theta, exercises_ind, correct, log_time_taken):
-        #theta, exercises_ind, correct, log_time_taken, abilities, num_steps)
         if self.pool is None:
             results = [sample_abilities_diffusion_wrapper(
                        self.theta, self.user_states[ind], self.options, ind)
@@ -450,6 +450,7 @@ class MirtModel(object):
             abilities, El, ind = result
             self.user_states[ind]['abilities'] = abilities.copy()
             average_energy += El / float(len(self.user_states))
+
         sys.stderr.write("E joint log L + const %f, " % (
                          - average_energy / np.log(2.)))
 
@@ -460,8 +461,8 @@ class MirtModel(object):
             mn_a += state['abilities'][:, 0].T / float(len(self.user_states))
             cov_a += (state['abilities'][:, 0] ** 2).T / (
                 float(len(self.user_states)))
-        sys.stderr.write("<abilities>", mn_a)
-        sys.stderr.write(", <abilities^2>", cov_a, ", ")
+        sys.stderr.write("<abilities> " + str(mn_a))
+        sys.stderr.write(", <abilities^2>" + str(cov_a) + ", ")
 
         # Maximization step
         old_theta_flat = self.theta.flat()
@@ -544,6 +545,7 @@ class MirtModel(object):
 def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,
                  slug='Test', title='test parameters', description='parameters'
                  'for an adaptive test'):
+    """Convert a set of mirt parameters into a json file and write it"""
 
     out_data = {
         "engine_class": "MIRTEngine",
@@ -552,14 +554,26 @@ def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,
         "description": description,
         # MIRT specific data
         "params": {
-            "exercise_ind_dict": exercise_ind_dict,
             "theta_flat": theta.flat().tolist(),
             "num_abilities": theta.num_abilities,
             "max_length": 15,
-            "max_time_taken": max_time_taken}
+            "max_time_taken": max_time_taken,
+            "exercise_ind_dict": exercise_ind_dict}
         }
 
     json_data = json.dumps(out_data, indent=4)
 
     with open(outfilename, 'w') as outfile:
         outfile.write(json_data)
+
+
+def json_to_data(filename):
+    """Load a json file back into memory as a numpy object"""
+    with open(filename, 'r') as data_file:
+        data = json.load(data_file)
+        params = Parameters(data['params']['num_abilities'],
+                            len(data['params']['exercise_ind_dict']),
+                            np.array(data['params']['theta_flat']),
+                            data['params']['exercise_ind_dict'])
+        data['params'] = params
+    return data

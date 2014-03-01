@@ -23,15 +23,14 @@ def logistic_log_regression(features, correct):
 
 def sigmoid(X):
     """Compute the sigmoid function of all values in ndarray X."""
+    # Bound the values of X
     X[X > 100] = 100
     X[X < -100] = -100
     X = np.nan_to_num(X)
 
-    den = 1.0 + np.exp(-1.0 * X)
-    den = np.nan_to_num(den)
-    den[den == 0] = 2
+    denominator = 1.0 + np.exp(-1.0 * X)
 
-    d = 1.0 / den
+    d = 1.0 / denominator
     return d
 
 

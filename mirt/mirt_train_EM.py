@@ -63,7 +63,7 @@ def get_cmd_line_options(arguments=None):
     parser = optparse.OptionParser()
     parser.add_option("-a", "--num_abilities", type=int, default=1,
                       help=("Number of hidden ability units"))
-    parser.add_option("-s", "--sampling_num_steps", type=int, default=50,
+    parser.add_option("-s", "--sampling_num_steps", type=int, default=100,
                       help=("Number of sampling steps to use for "
                             "sample_abilities_diffusion"))
     parser.add_option("-l", "--sampling_epsilon", type=float, default=0.1,
@@ -263,6 +263,8 @@ def get_data_from_file(options, exercise_ind_dict):
 def run(options):
     sys.stderr.write("Starting main." + str(options) + '\n')  # DEBUG
     exercise_ind_dict = defaultdict(generate_exercise_ind)
+
+    # Load information from the file
     user_states, user_states_train, user_states_test = get_data_from_file(
         options, exercise_ind_dict)
 
@@ -270,18 +272,9 @@ def run(options):
 
     # Initialize the parameters
     sys.stderr.write("%d exercises\n" % (num_exercises))
-    # we won't be adding any more exercises
+    # we won't be adding any more exercises, so we can cast this defaultdict to
+    # a dict
     exercise_ind_dict = dict(exercise_ind_dict)
-
-    if options.resume_from_file:
-        # HACK(jace): I need a cheap way
-        # to output features from a previously trained model.  To use this
-        # hacky version, pass --num_epochs 0 and you must pass the same
-        # data file the model in resume_from_file was trained on.
-        resume_from_model = np.load(options.resume_from_file)
-        exercise_ind_dict = resume_from_model['exercise_ind_dict']
-        sys.stderr.write("Loaded parameters from %s\n" % (
-            options.resume_from_file))
 
     model = mirt_util.MirtModel(
         options, num_exercises, exercise_ind_dict, user_states)
