@@ -244,6 +244,7 @@ def sample_abilities_diffusion(
         abilities = np.random.randn(theta.num_abilities, 1)
     else:
         abilities = abilities_init
+
     # calculate the energy for the initialization state
     E_abilities = 0.5 * np.dot(abilities.T, abilities) + np.sum(
         conditional_energy_data(

@@ -63,6 +63,8 @@ def load_and_simulate_assessment(
     # Load the indexer for the data
     indexer = FieldIndexer.get_for_slug(data_format)
 
+    datapoints = []
+
     # Iterate through each user's data, writing out a datapoint for
     # each user.
     with open(roc_filepath, 'w') as outfile, \
@@ -83,8 +85,9 @@ def load_and_simulate_assessment(
             if user != new_user:
                 # Generate the datapoint for the existing user history
                 if user:
-                    yield write_roc_datapoint(
-                        history, evaluation_indexes, model, outfile)
+                    datapoints.extend(
+                        write_roc_datapoint(
+                            history, evaluation_indexes, model, outfile))
 
                 # Reset all of the variables.
                 user = new_user
@@ -103,6 +106,7 @@ def load_and_simulate_assessment(
                 evaluation_indexes.append(len(history) - 1)
         test_data.close()
         outfile.close()
+    return datapoints
 
 
 def parse_line(line, indexer, evaluation_item_index):
@@ -158,7 +162,7 @@ def write_roc_datapoint(history, evaluation_indexes, model, outfile):
         evaluation_items.append(history.pop(evaluation_item_index))
         # Get the prediction by the model for the saved evaluation item given
         # the history
-
+    roc_points = []
     # For each of the collected evaluation items, write the predicted accuracy
     for evaluation_item in evaluation_items:
         acc = model.estimated_exercise_accuracy(
@@ -172,4 +176,5 @@ def write_roc_datapoint(history, evaluation_indexes, model, outfile):
         else:
             roc_point.append(0)
         roc_point.append(acc)
-        yield roc_point
+        roc_points.append(roc_point)
+    return roc_points

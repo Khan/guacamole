@@ -45,8 +45,6 @@ class MIRTEngine(engine.Engine):
         max_info_ex = None
         for exercise in self.eligible_exercises(history):
             fisher_information = self.fisher_information(history, exercise)
-            print 'fisher info'
-            print fisher_information
             if fisher_information > max_info:
                 max_info = fisher_information
                 max_info_ex = exercise

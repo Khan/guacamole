@@ -76,14 +76,14 @@ class FieldIndexer(object):
         """Return each key of the FieldIndexer"""
         return self.__dict__.keys()
 
-    topic_attempt_fields = ['user', 'topic', 'exercise', 'time_done',
-            'time_taken', 'problem_number', 'correct', 'scheduler_info',
-            'user_segment', 'dt']
+    topic_attempt_fields = [
+        'user', 'topic', 'exercise', 'time_done', 'time_taken',
+        'problem_number', 'correct', 'scheduler_info', 'user_segment', 'dt']
 
-    plog_fields = ['user', 'time_done', 'rowtype', 'exercise', 'problem_type',
-            'seed', 'time_taken', 'problem_number', 'correct',
-            'number_attempts', 'number_hints', 'eventually_correct',
-            'topic_mode', 'dt']
+    plog_fields = [
+        'user', 'time_done', 'rowtype', 'exercise', 'problem_type', 'seed',
+        'time_taken', 'problem_number', 'correct', 'number_attempts',
+        'number_hints', 'eventually_correct', 'topic_mode', 'dt']
 
     simple_fields = ['user', 'time_done', 'exercise', 'time_taken', 'correct']
 
@@ -105,8 +105,6 @@ def sequential_problem_numbers(attempts, idx):
             if prob_num == ex_prob_number[ex] + 1:
                 ex_prob_number[ex] = prob_num
             else:
-                #print "Bad line is:"
-                #print attempt
                 return False
     return True
 

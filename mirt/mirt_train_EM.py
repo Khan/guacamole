@@ -179,10 +179,10 @@ def emit_features(user_states, theta, options, split_desc):
 
             # TODO(jace) this should probably be the marginal estimation
             _, _, abilities, _ = mirt_util.sample_abilities_diffusion(
-                    theta, exercises_ind[:i], correct[:i], log_time_taken[:i],
-                    abilities_init=abilities, num_steps=200)
+                theta, exercises_ind[:i], correct[:i], log_time_taken[:i],
+                abilities_init=abilities, num_steps=200)
             prediction = mirt_util.conditional_probability_correct(
-                    abilities, theta, exercises_ind[i:(i + 1)])
+                abilities, theta, exercises_ind[i:(i + 1)])
 
             print >>f, "%d," % correct[i],
             print >>f, "%.4f," % prediction[-1],
@@ -225,7 +225,7 @@ def get_data_from_file(options, exercise_ind_dict):
                 # We're getting a new user, so perform the reduce operation
                 # on our previous user
                 user_states.append(create_user_state(
-                        attempts, exercise_ind_dict, options))
+                    attempts, exercise_ind_dict, options))
                 attempts = []
 
             prev_user = user
@@ -236,7 +236,7 @@ def get_data_from_file(options, exercise_ind_dict):
         if len(attempts) > 0:
             # flush the data for the final user, too
             user_states.append(create_user_state(
-                    attempts, exercise_ind_dict, options))
+                attempts, exercise_ind_dict, options))
             attempts = []
 
         fileinput.close()

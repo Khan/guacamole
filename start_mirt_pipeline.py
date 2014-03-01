@@ -215,8 +215,9 @@ def run_with_arguments(arguments):
                 arguments, abilities, time, datetime_str)
             roc_curve = generate_roc_curve_from_model(
                 arguments, abilities, time, datetime_str)
-    if arguments.visualize:
-        visualize(roc_curve)
+        params = gen_param_str(abilities, datetime_str, time)
+        if arguments.visualize:
+            visualize.show_roc({params: [r for r in roc_curve]})
 
     print
     print "If you're running this script somewhere you can't see matplotlib, "
