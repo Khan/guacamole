@@ -24,6 +24,7 @@ import argparse
 import datetime
 import multiprocessing
 import os
+import sys
 
 from mirt import mirt_train_EM, generate_predictions
 from mirt import visualize, adaptive_pretest, generate_responses
@@ -36,6 +37,9 @@ try:
     affinity.set_process_affinity_mask(0, 2 ** multiprocessing.cpu_count() - 1)
 except NotImplementedError:
     pass
+except ImportError:
+    sys.sterr.write('If you find that not all cores are being'
+                    'used, try installing affinity.\n')
 
 
 def get_command_line_arguments(arguments=None):

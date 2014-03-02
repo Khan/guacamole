@@ -1,3 +1,4 @@
+affinity
 numpy
 scipy
 matplotlib
