@@ -14,9 +14,9 @@ def sep_into_train_and_test(arguments, test_portion=.1):
     field (assumed to be something like a user or a task id), rather than
     randomly distributing the lines.
     """
-    data_file_name = os.path.expanduser(arguments.input)
-    train_file_name = arguments.output + 'train.responses'
-    test_file_name = arguments.output + 'test.responses'
+    data_file_name = os.path.expanduser(arguments.data_file)
+    train_file_name = arguments.model_directory + 'train.responses'
+    test_file_name = arguments.model_directory + 'test.responses'
     infile = open(data_file_name, 'r')
     train = open(train_file_name, 'w')
     test = open(test_file_name, 'w')

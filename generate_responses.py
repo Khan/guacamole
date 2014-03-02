@@ -136,5 +136,14 @@ def print_sample_data():
         for response in assessment.response_strings():
             print response
 
+
+def run(arguments):
+    """Run with arguments"""
+    print_sample_data(data_file=arguments.data_file,
+                      num_students=arguments.num_students,
+                      num_items=arguments.num_items,
+                      include_time=arguments.include_time,
+                      num_abilities=arguments.num_abilities)
+
 if __name__ == '__main__':
     print_sample_data()

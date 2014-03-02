@@ -15,9 +15,17 @@ in a sequence correctly)
 
 **Guide to Using These Tools**
 
-Quickstart guide: I've included here some simple data in csv format that you can
-use to train either model. If you call either of the start_x_pipeline scripts,
-it will train on those data. Feel free to substitute your own data
+To generate feedback
+`./start_mirt_pipeline.py generate_data`
+
+To train a model
+`./start_mirt_pipeline.py train_model`
+
+To visualize a mode
+`./start_mirt_pipeline.py visualize`
+
+To take an adaptive test from a trained model
+`./start_mirt_pipeline.py adaptive_test`
 
 **The Algorithms**
 
@@ -31,9 +39,6 @@ Item response theory is a classic technique in psychometrics to calibrate tests 
 
 This library is designed to be used on Khan Academy data. We have sample data in that format now, and if you're interested research based on our real data at scale, you can get in touch at research@khanacademy.org
 
-**Citing this library**
-
-TODO(eliana)
 
 If these tools are useful to you, let us know! If you'd like to contribute,
 you can submit a pull request or apply to work at Khan Academy - we're hiring

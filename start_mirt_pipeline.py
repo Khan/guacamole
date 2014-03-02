@@ -25,7 +25,8 @@ import datetime
 import multiprocessing
 import os
 
-from mirt import mirt_train_EM, generate_predictions, visualize
+from mirt import mirt_train_EM, generate_predictions
+from mirt import visualize, adaptive_pretest
 from train_util import model_training_util
 
 # Necessary on some systems to make sure all cores are used. If not all
@@ -47,7 +48,7 @@ def get_command_line_arguments(arguments=None):
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input",
+        "-d", "--data_file",
         default=os.path.dirname(
             os.path.abspath(__file__)) + '/sample_data/all.responses',
         help=("Name of file where data of interest is located."))
@@ -70,28 +71,24 @@ def get_command_line_arguments(arguments=None):
         "-n", "--num_epochs", type=int, default=100,
         help=("The number of EM iterations to do during learning"))
     parser.add_argument(
-        "-o", "--output",
+        "-o", "--model_directory",
         default=os.path.dirname(
-            os.path.abspath(__file__)) + '/sample_data/output/',
-        help=("The directory to write output"))
+            os.path.abspath(__file__)) + '/sample_data/models/',
+        help=("The directory to write models and other output"))
     parser.add_argument(
         "-m", "--model",
         default=os.path.dirname(
-            os.path.abspath(__file__)) + '/sample_data/output/model.json',
+            os.path.abspath(__file__)) + '/sample_data/models/model.json',
         help=("The location of the model (to write if training, and to read if"
               " visualizing or testing."))
-    parser.add_argument(
-        "-g", "--generate", default=False,
-        help=("Generate fake training data."))
-    parser.add_argument(
-        "-r", "--train", default=False,
-        help=("Train a model from training data."))
-    parser.add_argument(
-        "-v", "--visualize", default=True,
-        help=("Visualize a trained model."))
-    parser.add_argument(
-        "-s", "--test", default=False,
-        help=("Take an adaptive test from a trained model."))
+    parser.add_argument("--generate", action="store_true",
+                        help=("Generate fake training data."))
+    parser.add_argument("--train", action="store_true",
+                        help=("Train a model from training data."))
+    parser.add_argument("--visualize", action="store_true",
+                        help=("Visualize a trained model."))
+    parser.add_argument("--test", action="store_true",
+                        help=("Take an adaptive test from a trained model."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
@@ -135,9 +132,8 @@ def main():
 
 
 def make_necessary_directiories(arguments):
-    """Ensure that output directories for the data we'll be writing exist.
-    """
-    roc_dir = arguments.output + 'rocs/'
+    """Ensure that output directories for the data we'll be writing exist."""
+    roc_dir = arguments.model_directory + 'rocs/'
     model_training_util.mkdir_p([roc_dir])
 
 
@@ -150,10 +146,9 @@ def gen_param_str(abilities, datetime_str, time):
 
 def generate_model_with_parameters(
         arguments, abilities, time, datetime_str):
-    """Trains a model with the given parameters, saving results
-    """
+    """Trains a model with the given parameters, saving results."""
     param_str = gen_param_str(abilities, datetime_str, time)
-    out_dir_name = arguments.output + param_str + '/'
+    out_dir_name = arguments.model_directory + param_str + '/'
     model_training_util.mkdir_p(out_dir_name)
     # to set more fine-grained parameters about MIRT training, look at
     # the arguments at mirt/mirt_train_EM.py
@@ -161,7 +156,7 @@ def generate_model_with_parameters(
         '-a', str(abilities),
         '-w', str(arguments.workers),
         '-n', str(arguments.num_epochs),
-        '-f', arguments.output + 'train.responses',
+        '-f', arguments.model_directory + 'train.responses',
         '-o', out_dir_name]
     if time:
         mirt_train_params.append(time)
@@ -173,10 +168,10 @@ def generate_roc_curve_from_model(
         arguments, abilities, time, datetime_str):
     """Read results from each model trained and generate roc curves."""
     # There will be many .npz files written; we take the last one.
-    roc_dir = arguments.output + 'rocs/'
-    test_file = arguments.output + 'test.responses'
+    roc_dir = arguments.model_directory + 'rocs/'
+    test_file = arguments.model_directory + 'test.responses'
     param_str = gen_param_str(abilities, datetime_str, time)
-    out_dir_name = arguments.output + param_str + '/'
+    out_dir_name = arguments.model_directory + param_str + '/'
     params = get_latest_parameter_file_name(out_dir_name)
     roc_file = roc_dir + param_str + '.roc'
     return generate_predictions.load_and_simulate_assessment(
@@ -187,32 +182,35 @@ def run_with_arguments(arguments):
     """Takes you through every step from having a model, training it,
     testing it, and potentially uploading it to a testing engine.
     """
-    # Set up directories
-    make_necessary_directiories(arguments)
+    if arguments.train:
+        # Set up directories
+        make_necessary_directiories(arguments)
 
-    # Generate data, either by downloading from AWS or by providing your own
-    # data from some other source
-    model_training_util.sep_into_train_and_test(arguments)
+        # Generate data, either by downloading from AWS or by providing your
+        # own data from some other source
+        model_training_util.sep_into_train_and_test(arguments)
 
-    print 'Training MIRT models'
-    datetime_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
+        print 'Training MIRT models'
+        datetime_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
 
-    # For each combination of the setting for "abilities" and
-    # "response_time_mode", we want to fit a model.
-    # Loop through the combinations and fit a model for each.
-    for abilities in arguments.abilities:
-        for time in get_time_arguments(arguments):
-            generate_model_with_parameters(
-                arguments, abilities, time, datetime_str)
-            roc_curve = generate_roc_curve_from_model(
-                arguments, abilities, time, datetime_str)
-        params = gen_param_str(abilities, datetime_str, time)
-        out_dir_name = arguments.output + params + '/'
-        model = get_latest_parameter_file_name(out_dir_name)
-        if arguments.visualize:
-            print 'visualizing for %s' % model
-            visualize.show_roc({params: [r for r in roc_curve]})
-            visualize.show_exercises(model)
+        # For each combination of the setting for "abilities" and
+        # "response_time_mode", we want to fit a model.
+        # Loop through the combinations and fit a model for each.
+        for abilities in arguments.abilities:
+            for time in get_time_arguments(arguments):
+                generate_model_with_parameters(
+                    arguments, abilities, time, datetime_str)
+                roc_curve = generate_roc_curve_from_model(
+                    arguments, abilities, time, datetime_str)
+            params = gen_param_str(abilities, datetime_str, time)
+            out_dir_name = arguments.model_directory + params + '/'
+            model = get_latest_parameter_file_name(out_dir_name)
+    if arguments.visualize:
+        print 'visualizing for %s' % model
+        visualize.show_roc({params: [r for r in roc_curve]})
+        visualize.show_exercises(model)
+    if arguments.test:
+        adaptive_pretest.main(model)
 
 if __name__ == '__main__':
     main()
