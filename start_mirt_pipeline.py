@@ -130,7 +130,7 @@ def get_time_arguments(arguments):
 
 
 def get_latest_parameter_file_name(path):
-    """Gets the most recent of many parameter files in a directory.
+    """Get the most recent of many parameter files in a directory.
 
     There will be many .npz files written; we take the last one.
     """
@@ -140,7 +140,7 @@ def get_latest_parameter_file_name(path):
 
 
 def main():
-    """Gets arguments from the command line and runs with those arguments."""
+    """Get arguments from the command line and runs with those arguments."""
     arguments = get_command_line_arguments()
     run_with_arguments(arguments)
 
@@ -152,8 +152,7 @@ def make_necessary_directiories(arguments):
 
 
 def gen_param_str(abilities, datetime_str, time):
-    """Transform data about current run into a param string for file names.
-    """
+    """Transform data about current run into a param string for file names."""
     time_str = 'time' if time else 'no_time'
     return "%s_%s_%s" % (abilities, time_str, datetime_str)
 
@@ -197,6 +196,7 @@ def run_with_arguments(arguments):
     testing it, and potentially uploading it to a testing engine.
     """
     if arguments.generate:
+        print 'Generating Responses'
         generate_responses.run(arguments)
     if arguments.train:
         # Set up directories
@@ -221,12 +221,13 @@ def run_with_arguments(arguments):
             params = gen_param_str(abilities, datetime_str, time)
             out_dir_name = arguments.model_directory + params + '/'
             model = get_latest_parameter_file_name(out_dir_name)
+
     if arguments.visualize:
         print 'visualizing for %s' % model
         visualize.show_roc({params: [r for r in roc_curve]})
-        visualize.show_exercises(model)
+        visualize.show_exercises(arguments.model)
     if arguments.test:
-        adaptive_pretest.main(model)
+        adaptive_pretest.main(arguments.model)
 
 if __name__ == '__main__':
     main()
