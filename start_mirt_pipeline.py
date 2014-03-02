@@ -26,7 +26,7 @@ import multiprocessing
 import os
 
 from mirt import mirt_train_EM, generate_predictions
-from mirt import visualize, adaptive_pretest
+from mirt import visualize, adaptive_pretest, generate_responses
 from train_util import model_training_util
 
 # Necessary on some systems to make sure all cores are used. If not all
@@ -57,7 +57,15 @@ def get_command_line_arguments(arguments=None):
         nargs='+', help='The dimensionality/number of abilities.'
         'this can be a series of values for multiple models, ie. -a 1 2 3')
     parser.add_argument(
-        '-t', '--time', default='with_time',
+        '-s', '--num_students', default=500, type=int,
+        help="Number of students to generate data for. Only meaningful when "
+        "generating data - otherwise it's read from the data file.")
+    parser.add_argument(
+        '-p', '--num_problems', default=10, type=int,
+        help="Number of problems to generate data for. Only meaningful when "
+        "generating data - otherwise it's read from the data file.")
+    parser.add_argument(
+        '-t', '--time', default='without_time',
         help=("Whether to train with time (default=False).\n"
               "Valid inputs:\n"
               "\twith_time : default. trains with time\n"
@@ -94,6 +102,8 @@ def get_command_line_arguments(arguments=None):
         arguments = parser.parse_args(arguments)
     else:
         arguments = parser.parse_args()
+    arguments.include_time = (arguments.time == 'with_time' or
+                              arguments.time == 'with_and_without_time')
 
     return arguments
 
@@ -182,6 +192,8 @@ def run_with_arguments(arguments):
     """Takes you through every step from having a model, training it,
     testing it, and potentially uploading it to a testing engine.
     """
+    if arguments.generate:
+        generate_responses.run(arguments)
     if arguments.train:
         # Set up directories
         make_necessary_directiories(arguments)
