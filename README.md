@@ -16,16 +16,16 @@ in a sequence correctly)
 **Guide to Using These Tools**
 
 To generate feedback
-`./start_mirt_pipeline.py generate_data`
+`./start_mirt_pipeline.py --generate`
 
 To train a model
-`./start_mirt_pipeline.py train_model`
+`./start_mirt_pipeline.py --train`
 
 To visualize a mode
-`./start_mirt_pipeline.py visualize`
+`./start_mirt_pipeline.py --visualize`
 
 To take an adaptive test from a trained model
-`./start_mirt_pipeline.py adaptive_test`
+`./start_mirt_pipeline.py --test`
 
 **The Algorithms**
 
