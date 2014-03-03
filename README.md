@@ -1,16 +1,18 @@
 `guacamole` is a collection of tools we use at Khan Academy to train our models
 from new data on a regular basis. These tools are meant to be compatible
 with a variety of data formats from anyone who has learning data - especially
-but not only online learning data.
+but not only data from online instruction.
 
 **The Tools:**
 
-We have two pipelines set up here, one for training Multi-dimensional Item Response
-Theory models (with time, if you have that data) and one for looking at responses
-and training a model to predict if the next item will be answered correctly, Knowledge Params.
-The Item Response Theory model is probably better suited to testing data (at Khan Academy,
+Two pipelines are included here.  One trains Multi-dimensional Item Response
+Theory (MIRT) models, including both item correctness and response time
+if you have that data.  The other, called Knowledge Params, trains a classifier
+with a mixture of random and hand designed features to predict whether the
+the next item will be answered correctly based upon the response history.
+The MIRT model is probably better suited to testing data (at Khan Academy,
 we use it for our assessments) and the Knowledge model is probably better suited to
-online tutoring data (we use to evaluate the probability of answering the next question
+online tutoring data (we use it to evaluate the probability of answering the next question
 in a sequence correctly)
 
 **Guide to Using These Tools**
@@ -65,9 +67,11 @@ And how difficult each problem is
 
 **Khan Academy Data**
 
-This library is designed to be used on Khan Academy data. We have sample data in that format now, and if you're interested research based on our real data at scale, you can get in touch at research@khanacademy.org
+This library is designed to be used on Khan Academy data. We have sample, non-student, data in that format now.
+If you are interested in using our real data at scale in your research, you should visit [http://khanacademy.org/r/research](http://khanacademy.org/r/research), and then email us at [research@khanacademy.org](mailto:research@khanacademy.org).
 
 
 If these tools are useful to you, let us know! If you'd like to contribute,
-you can submit a pull request or apply to work at Khan Academy - we're hiring
-software engineers and data scientists.
+you can submit a pull request or
+[apply to work at Khan Academy](https://www.khanacademy.org/careers) - we're hiring data
+scientists and software engineers for both full time positions and internships.
