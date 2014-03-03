@@ -19,33 +19,48 @@ import mirt.mirt_engine
 import mirt.mirt_util
 
 
-def interactive_test(test_engine):
-    """A simple command line interface to mirt parameters."""
+class TestEngine(object):
+    """An engine to administer an interactive test"""
 
-    history = []
-    use_time = raw_input("Use time as a feature? [y/n]: ")
-    # Accept any answer starting with y or Y as a yes
-    time = use_time[0] in ['y', 'Y']
+    def __init__(self, test_engine):
+        self.engine = test_engine
+        self.history = []
 
-    while not test_engine.is_complete(history):
-        exercise = test_engine.next_suggested_item(history).item_id
-        print "\nQuestion #%d, Exercise type: %s" % (len(history), exercise)
-        correct = int(raw_input("Enter 1 for correct, 0 for incorrect: "))
-        correct = correct if correct == 1 else 0
-        if time:
-            print "How much time did it take?"
-            time = float(raw_input("Enter time in seconds: "))
-        response = mirt.engine.ItemResponse.new(
-            correct=correct, exercise=exercise)
-        history.append(response.data)
-        print "Current score is now %.4f (stdev=%.4f." % (
-            test_engine.score(history), test_engine.abilities_stdev)
-        print "Progress is now %.4f." % test_engine.progress(history)
+    def print_current_score(self):
+        """Print the current score for the current history"""
+        print "Current score is now %.4f (mean std=%.4f, max std=%.4f)." % (
+            self.engine.score(self.history), min(self.engine.abilities_stdev),
+            max(self.engine.abilities_stdev))
 
-    print json.dumps(
-        test_engine.estimated_exercise_accuracies(history), indent=4)
-    print test_engine.abilities
-    print test_engine.score(history)
+    def interactive_test(self):
+        """A simple command line interface to mirt parameters."""
+
+        use_time = raw_input("Use time as a feature? [y/n]: ")
+        # Accept any answer starting with y or Y as a yes
+        time = use_time[0] in ['y', 'Y']
+
+        while not self.engine.is_complete(self.history):
+            exercise = self.engine.next_suggested_item(self.history).item_id
+            print "\nQuestion #%d, Exercise type: %s" % (
+                len(self.history), exercise)
+            correct = int(raw_input("Enter 1 for correct, 0 for incorrect: "))
+            correct = correct if correct == 1 else 0
+            if time:
+                print "How much time did it take?"
+                time = float(raw_input("Enter time in seconds: "))
+
+            response = mirt.engine.ItemResponse.new(
+                correct=correct, exercise=exercise)
+
+            self.history.append(response.data)
+            self.print_current_score()
+
+            print "Progress is now %.4f." % self.engine.progress(self.history)
+
+        print json.dumps(
+            self.engine.estimated_exercise_accuracies(self.history), indent=4)
+        print self.engine.abilities
+        print self.engine.score(self.history)
 
 
 def main(model_file):
@@ -60,8 +75,9 @@ def main(model_file):
         will be.
     """
     data = mirt.mirt_util.json_to_data(model_file)
-    parameters = data['params']
-    interactive_test(mirt.mirt_engine.MIRTEngine(parameters))
+    engine = TestEngine(mirt.mirt_engine.MIRTEngine(data))
+    engine.interactive_test()
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:

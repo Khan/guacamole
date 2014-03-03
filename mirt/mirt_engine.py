@@ -17,12 +17,8 @@ class MIRTEngine(engine.Engine):
             contextual_exercises: a list of the exercises names that the
                 client would like the engine to choose questions from.
         """
-
-        self.exercise_ind_dict = model_data['exercise_ind_dict']
-        num_exercises = len(self.exercise_ind_dict)
-        self.theta = mirt_util.Parameters(
-            model_data['num_abilities'], num_exercises,
-            vals=model_data['theta_flat'])
+        self.theta = model_data['params']
+        self.exercise_ind_dict = self.theta.exercise_ind_dict
 
         self.num_abilities = self.theta.num_abilities
         self.abilities = np.zeros((self.num_abilities, 1))

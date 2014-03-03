@@ -1,10 +1,9 @@
 """Loads a json mirt file and a test file with assessments to evaluate.
    Outputs a series of tuples of predictions and actual responses.
 """
-import json
-import numpy
 import random
 
+import mirt.mirt_util
 import mirt.engine
 import mirt.mirt_engine
 from train_util.model_training_util import FieldIndexer
@@ -56,9 +55,10 @@ def load_and_simulate_assessment(
             'True'.  If there is no such value, keep a random item.
     """
     # Load the parameters from the json parameter file.
-    with open(json_filepath, 'r') as json_file:
-        params = json.load(json_file)['params']
-        params['theta_flat'] = numpy.array(params['theta_flat'])
+    # with open(json_filepath, 'r') as json_file:
+    #     params = json.load(json_file)['params']
+    #     params['theta_flat'] = numpy.array(params['theta_flat'])
+    params = mirt.mirt_util.json_to_data(json_filepath)
 
     # Load the indexer for the data
     indexer = FieldIndexer.get_for_slug(data_format)

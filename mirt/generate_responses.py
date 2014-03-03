@@ -153,7 +153,7 @@ def run(arguments):
     print_sample_data(data_file=arguments.data_file,
                       num_students=arguments.num_students,
                       num_items=arguments.num_problems,
-                      include_time=arguments.include_time,
+                      include_time=arguments.time,
                       num_abilities=arguments.abilities)
 
 if __name__ == '__main__':

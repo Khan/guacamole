@@ -24,6 +24,7 @@ import argparse
 import datetime
 import multiprocessing
 import os
+import shutil
 import sys
 
 from mirt import mirt_train_EM, generate_predictions
@@ -57,9 +58,8 @@ def get_command_line_arguments(arguments=None):
             os.path.abspath(__file__)) + '/sample_data/all.responses',
         help=("Name of file where data of interest is located."))
     parser.add_argument(
-        '-a', '--abilities', default=[1], type=int,
-        nargs='+', help='The dimensionality/number of abilities.'
-        'this can be a series of values for multiple models, ie. -a 1 2 3')
+        '-a', '--abilities', default=1, type=int,
+        help='The dimensionality/number of abilities.')
     parser.add_argument(
         '-s', '--num_students', default=500, type=int,
         help="Number of students to generate data for. Only meaningful when "
@@ -68,14 +68,8 @@ def get_command_line_arguments(arguments=None):
         '-p', '--num_problems', default=10, type=int,
         help="Number of problems to generate data for. Only meaningful when "
         "generating data - otherwise it's read from the data file.")
-    parser.add_argument(
-        '-t', '--time', default='without_time',
-        help=("Whether to train with time (default=False).\n"
-              "Valid inputs:\n"
-              "\twith_time : default. trains with time\n"
-              "\twithout_time : Trains a mirt model with no time\n"
-              "\twith_and_without_time : trains both types of models!\n"
-              "\t\tDouble the time, double the fun!"))
+    parser.add_argument("-t", "--time", action="store_true",
+                        help=("Generate fake training data."))
     parser.add_argument(
         '-w', '--workers', type=int, default=1,
         help=("The number of processes to use to parallelize mirt training"))
@@ -106,34 +100,31 @@ def get_command_line_arguments(arguments=None):
         arguments = parser.parse_args(arguments)
     else:
         arguments = parser.parse_args()
-    arguments.include_time = (arguments.time == 'with_time' or
-                              arguments.time == 'with_and_without_time')
+
+    # Save the current time for reference when looking at generated models.
+    arguments.datetime = str(datetime.datetime.now())
 
     return arguments
 
 
-def get_time_arguments(arguments):
-    """We take arguments about training models incorporating
-    response time.
-    """
-    if arguments.time == 'with_and_without_time':
-        time_arguments = ['', '-z']
-    elif arguments.time == 'without_time':
-        time_arguments = ['-z']
-    elif arguments.time == 'with_time':
-        time_arguments = ['']
-    else:
-        print 'Invalid argument selected for --time'
-        print 'Choosing default behavior - with time'
-        time_arguments = ['']
-    return time_arguments
+def save_model(arguments):
+    """Look at all generated models, and save the most recent to the correct
+    location"""
+    latest_model = get_latest_parameter_file_name(arguments)
+    #with open(latest_model, 'r') as latest_model:
+    #    with open(arguments.model, 'w') as model_location:
+    if True:
+            print "Saving model to %s" % arguments.model
+            shutil.copyfile(latest_model, arguments.model)
 
 
-def get_latest_parameter_file_name(path):
+def get_latest_parameter_file_name(arguments):
     """Get the most recent of many parameter files in a directory.
 
     There will be many .npz files written; we take the last one.
     """
+    params = gen_param_str(arguments)
+    path = arguments.model_directory + params + '/'
     npz_files = os.listdir(path)
     npz_files.sort(key=lambda fname: fname.split('_')[-1])
     return path + npz_files[-1]
@@ -151,16 +142,16 @@ def make_necessary_directiories(arguments):
     model_training_util.mkdir_p([roc_dir])
 
 
-def gen_param_str(abilities, datetime_str, time):
+def gen_param_str(arguments):
     """Transform data about current run into a param string for file names."""
-    time_str = 'time' if time else 'no_time'
-    return "%s_%s_%s" % (abilities, time_str, datetime_str)
+    time_str = 'time' if arguments.time else 'no_time'
+    return "%s_%s_%s" % (arguments.abilities, time_str, arguments.datetime)
 
 
 def generate_model_with_parameters(
         arguments, abilities, time, datetime_str):
     """Trains a model with the given parameters, saving results."""
-    param_str = gen_param_str(abilities, datetime_str, time)
+    param_str = gen_param_str(arguments)
     out_dir_name = arguments.model_directory + param_str + '/'
     model_training_util.mkdir_p(out_dir_name)
     # to set more fine-grained parameters about MIRT training, look at
@@ -182,13 +173,10 @@ def generate_roc_curve_from_model(
     """Read results from each model trained and generate roc curves."""
     # There will be many .npz files written; we take the last one.
     roc_dir = arguments.model_directory + 'rocs/'
+    roc_file = roc_dir + arguments.datetime
     test_file = arguments.model_directory + 'test.responses'
-    param_str = gen_param_str(abilities, datetime_str, time)
-    out_dir_name = arguments.model_directory + param_str + '/'
-    params = get_latest_parameter_file_name(out_dir_name)
-    roc_file = roc_dir + param_str + '.roc'
     return generate_predictions.load_and_simulate_assessment(
-        params, roc_file, test_file)
+        arguments.model, roc_file, test_file)
 
 
 def run_with_arguments(arguments):
@@ -198,6 +186,7 @@ def run_with_arguments(arguments):
     if arguments.generate:
         print 'Generating Responses'
         generate_responses.run(arguments)
+        print 'Generated responses for %d students and %d '
     if arguments.train:
         # Set up directories
         make_necessary_directiories(arguments)
@@ -212,18 +201,18 @@ def run_with_arguments(arguments):
         # For each combination of the setting for "abilities" and
         # "response_time_mode", we want to fit a model.
         # Loop through the combinations and fit a model for each.
-        for abilities in arguments.abilities:
-            for time in get_time_arguments(arguments):
-                generate_model_with_parameters(
-                    arguments, abilities, time, datetime_str)
-                roc_curve = generate_roc_curve_from_model(
-                    arguments, abilities, time, datetime_str)
-            params = gen_param_str(abilities, datetime_str, time)
-            out_dir_name = arguments.model_directory + params + '/'
-            model = get_latest_parameter_file_name(out_dir_name)
+        generate_model_with_parameters(
+            arguments, arguments.abilities, arguments.time, datetime_str)
+        save_model(arguments)
+        roc_curve = generate_roc_curve_from_model(
+            arguments, arguments.abilities, arguments.time,
+            arguments.datetime)
+        params = gen_param_str(arguments)
+        #out_dir_name = arguments.model_directory + params + '/'
+        #model = get_latest_parameter_file_name(out_dir_name)
 
     if arguments.visualize:
-        print 'visualizing for %s' % model
+        print 'visualizing for %s' % arguments.model
         visualize.show_roc({params: [r for r in roc_curve]})
         visualize.show_exercises(arguments.model)
     if arguments.test:

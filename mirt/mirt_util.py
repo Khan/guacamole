@@ -571,6 +571,8 @@ def json_to_data(filename):
     """Load a json file back into memory as a numpy object"""
     with open(filename, 'r') as data_file:
         data = json.load(data_file)
+        data['max_length'] = data['params']['max_length']
+        data['max_time_taken'] = data['params']['max_time_taken']
         params = Parameters(data['params']['num_abilities'],
                             len(data['params']['exercise_ind_dict']),
                             np.array(data['params']['theta_flat']),
