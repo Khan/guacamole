@@ -148,8 +148,7 @@ def gen_param_str(arguments):
     return "%s_%s_%s" % (arguments.abilities, time_str, arguments.datetime)
 
 
-def generate_model_with_parameters(
-        arguments, abilities, time, datetime_str):
+def generate_model_with_parameters(arguments):
     """Trains a model with the given parameters, saving results."""
     param_str = gen_param_str(arguments)
     out_dir_name = arguments.model_directory + param_str + '/'
@@ -157,21 +156,19 @@ def generate_model_with_parameters(
     # to set more fine-grained parameters about MIRT training, look at
     # the arguments at mirt/mirt_train_EM.py
     mirt_train_params = [
-        '-a', str(abilities),
+        '-a', str(arguments.abilities),
         '-w', str(arguments.workers),
         '-n', str(arguments.num_epochs),
         '-f', arguments.model_directory + 'train.responses',
         '-o', out_dir_name]
-    if time:
-        mirt_train_params.append(time)
+    if arguments.time:
+        mirt_train_params.append('-z')
 
     mirt_train_EM.run_programmatically(mirt_train_params)
 
 
-def generate_roc_curve_from_model(
-        arguments, abilities, time, datetime_str):
+def generate_roc_curve_from_model(arguments):
     """Read results from each model trained and generate roc curves."""
-    # There will be many .npz files written; we take the last one.
     roc_dir = arguments.model_directory + 'rocs/'
     roc_file = roc_dir + arguments.datetime
     test_file = arguments.model_directory + 'test.responses'
@@ -183,38 +180,34 @@ def run_with_arguments(arguments):
     """Takes you through every step from having a model, training it,
     testing it, and potentially uploading it to a testing engine.
     """
+    params = gen_param_str(arguments)
     if arguments.generate:
         print 'Generating Responses'
         generate_responses.run(arguments)
-        print 'Generated responses for %d students and %d '
+        print 'Generated responses for %d students and %d ' % (
+            arguments.num_students, arguments.num_problems)
     if arguments.train:
         # Set up directories
         make_necessary_directiories(arguments)
 
-        # Generate data, either by downloading from AWS or by providing your
-        # own data from some other source
+        # Separate provided data file into a train and test set.
         model_training_util.sep_into_train_and_test(arguments)
 
         print 'Training MIRT models'
-        datetime_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
-
         # For each combination of the setting for "abilities" and
         # "response_time_mode", we want to fit a model.
         # Loop through the combinations and fit a model for each.
-        generate_model_with_parameters(
-            arguments, arguments.abilities, arguments.time, datetime_str)
+        generate_model_with_parameters(arguments)
         save_model(arguments)
-        roc_curve = generate_roc_curve_from_model(
-            arguments, arguments.abilities, arguments.time,
-            arguments.datetime)
-        params = gen_param_str(arguments)
         #out_dir_name = arguments.model_directory + params + '/'
         #model = get_latest_parameter_file_name(out_dir_name)
 
     if arguments.visualize:
+        roc_curve = generate_roc_curve_from_model(arguments)
         print 'visualizing for %s' % arguments.model
         visualize.show_roc({params: [r for r in roc_curve]})
         visualize.show_exercises(arguments.model)
+
     if arguments.test:
         adaptive_pretest.main(arguments.model)
 
