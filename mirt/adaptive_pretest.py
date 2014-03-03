@@ -35,9 +35,9 @@ class TestEngine(object):
     def interactive_test(self):
         """A simple command line interface to mirt parameters."""
 
-        use_time = raw_input("Use time as a feature? [y/n]: ")
+        use_time = raw_input("Use time as a feature? [y/N]: ")
         # Accept any answer starting with y or Y as a yes
-        time = use_time[0] in ['y', 'Y']
+        time = use_time and use_time[0] in ['y', 'Y']
 
         while not self.engine.is_complete(self.history):
             exercise = self.engine.next_suggested_item(self.history).item_id
@@ -57,9 +57,14 @@ class TestEngine(object):
 
             print "Progress is now %.4f." % self.engine.progress(self.history)
 
+    def print_outcome(self):
+        """Print the status of a current test that's been taken"""
+        print 'Estimated Exercise Accuracies:'
         print json.dumps(
             self.engine.estimated_exercise_accuracies(self.history), indent=4)
+        print 'Abilities:'
         print self.engine.abilities
+        print 'Score:'
         print self.engine.score(self.history)
 
 
@@ -77,6 +82,7 @@ def main(model_file):
     data = mirt.mirt_util.json_to_data(model_file)
     engine = TestEngine(mirt.mirt_engine.MIRTEngine(data))
     engine.interactive_test()
+    engine.print_outcome()
 
 
 if __name__ == '__main__':

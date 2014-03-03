@@ -27,6 +27,10 @@ To visualize a mode
 To take an adaptive test from a trained model
 `./start_mirt_pipeline.py --test`
 
+To score several taken tests test from a trained model
+`./start_mirt_pipeline.py --score`
+
+
 **The Algorithms**
 
 `guacamole` aspires to be a general purpose library with a spectrum of commonly used algorithms for analyzing educational data (especially at scale). For now, we support a few common algorithms.
@@ -34,6 +38,30 @@ To take an adaptive test from a trained model
 *Multidimensional Item Response Theory*
 
 Item response theory is a classic technique in psychometrics to calibrate tests and test items with student abilities, resulting in difficulty ratings for test items and ability ratings for students.
+
+**Visualizations**
+
+A few visualizations are available for the data.
+
+First, you can see an ROC curve given your parameters:
+`--roc_viz`
+
+# TODO(eliana)
+
+You can also see graphs of each exercise by difficulty and discrimination
+`--sigmoid_viz`
+
+# TODO(eliana)
+
+Finally, You can see a visualization of how well each student did
+`--student_viz`
+
+# TODO(eliana)
+
+And how difficult each problem is
+`--problem_viz`
+
+# TODO(eliana)
 
 **Khan Academy Data**
 

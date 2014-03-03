@@ -48,8 +48,7 @@ def show_exercises(parameter_file):
         for exercise in exercises:
             exercise_plots[exercise].append(conditional_probs[
                 exercises.index(exercise)])
-    print abilities_to_plot.size
-    print np.array(exercise_plots.values())[0].size
     for exercise in exercises:
         plt.plot(abilities_to_plot, exercise_plots[exercise], label=exercise)
+    plt.legend()
     plt.show()
