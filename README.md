@@ -10,11 +10,21 @@ Theory (MIRT) models, including both item correctness and response time if you
 have that data.  The other, called Knowledge Params, trains a classifier with a mixture of random and hand designed features to predict whether the the next
 item will be answered correctly based upon the response history. The MIRT model is probably better suited to testing data (at Khan Academy, we use it for our assessments) and the Knowledge model is probably better suited to online tutoring data (we use it to evaluate the probability of answering the next question in a sequence correctly)
 
-**Getting Started**
+**Getting Started for Learning@Scale attendees**
+
+To use this library, you'll need to have numpy, scipy, and matplotlib installed on your machine. If this is not already the case, I recommend using the [Scipy Superpack](http://fonnesbeck.github.io/ScipySuperpack/) for Mac, or following the [SciPy Stack installation instructions](http://www.scipy.org/install.html) for Linux or Windows.
+
 
 To generate some fake data, run the command
 `./start_mirt_pipeline.py --generate`
 
+To start looking at visualizations for that data, first you'll have to train a model. Try running
+`./start_mirt_pipeline.py --train`
+to train.
+
+To visualize the results of your training, look at
+
+`./start_mirt_pipeline.py --visualize`
 
 **Guide to Using the Item Response Theory Tool**
 
