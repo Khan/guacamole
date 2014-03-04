@@ -87,3 +87,9 @@ If these tools are useful to you, let us know! If you'd like to contribute,
 you can submit a pull request or
 [apply to work at Khan Academy](https://www.khanacademy.org/careers) - we're hiring data
 scientists and software engineers for both full time positions and internships.
+
+Authors: Eliana Feasley, Jace Kohlmeier, Matt Faus, Jascha Sohl-Dickstein (2014)
+
+This software is made available under the Creative Commons
+Attribution-Noncommercial License.
+( http://creativecommons.org/licenses/by-nc/4.0/ )
