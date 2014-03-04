@@ -83,7 +83,7 @@ def get_cmd_line_options(arguments=None):
                             "for each student.  A sign that there is too "
                             "little training data is if the update step "
                             "length ||dcouplings|| remains large."))
-    parser.add_option("-m", "--max_pass_lbfgs", type=int, default=10,
+    parser.add_option("-m", "--max_pass_lbfgs", type=int, default=5,
                       help=("The number of LBFGS descent steps to do per "
                             "EM iteration"))
     parser.add_option("-p", "--regularization", type=float, default=1e-5,

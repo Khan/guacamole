@@ -103,6 +103,13 @@ def get_command_line_arguments(arguments=None):
             os.path.abspath(__file__)) + '/sample_data/models/model.json',
         help=("The location of the model (to write if training, and to read if"
               " visualizing or testing."))
+    parser.add_option(
+        "-q", "--num_replicas", type=int, default=1, help=(
+            "The number of copies of the data to train on.  If there is too "
+            "little training data, increase this number in order to maintain "
+            "multiple samples from the abilities vector for each student.  A "
+            "sign that there is too little training data is if the update step"
+            " length ||dcouplings|| remains large."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
