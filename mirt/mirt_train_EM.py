@@ -33,6 +33,9 @@ except NotImplementedError:
     # Affinity is only implemented for linux systems, and multithreading should
     # work on other systems.
     pass
+except ImportError:
+    # It's also OK if affinity is just not installed on the system
+    pass
 
 from mirt import mirt_util
 from train_util.model_training_util import FieldIndexer
@@ -284,6 +287,7 @@ def run(options):
         model.run_em_step(epoch)
 
     if options.emit_features:
+        # TODO -- add a comment explaining what's going on here
         if options.training_set_size < 1.0:
             emit_features(user_states_test, model.theta, options, "test")
             emit_features(user_states_train, model.theta, options, "train")

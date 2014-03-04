@@ -39,7 +39,7 @@ try:
 except NotImplementedError:
     pass
 except ImportError:
-    sys.sterr.write('If you find that not all cores are being'
+    sys.stderr.write('If you find that not all cores are being '
                     'used, try installing affinity.\n')
 
 
@@ -52,6 +52,14 @@ def get_command_line_arguments(arguments=None):
     mirt_train_EM.py
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument("--generate", action="store_true",
+                        help=("Generate fake training data."))
+    parser.add_argument("--train", action="store_true",
+                        help=("Train a model from training data."))
+    parser.add_argument("--visualize", action="store_true",
+                        help=("Visualize a trained model."))
+    parser.add_argument("--test", action="store_true",
+                        help=("Take an adaptive test from a trained model."))
     parser.add_argument(
         "-d", "--data_file",
         default=os.path.dirname(
@@ -63,11 +71,11 @@ def get_command_line_arguments(arguments=None):
     parser.add_argument(
         '-s', '--num_students', default=500, type=int,
         help="Number of students to generate data for. Only meaningful when "
-        "generating data - otherwise it's read from the data file.")
+        "generating fake data - otherwise it's read from the data file.")
     parser.add_argument(
         '-p', '--num_problems', default=10, type=int,
         help="Number of problems to generate data for. Only meaningful when "
-        "generating data - otherwise it's read from the data file.")
+        "generating fake data - otherwise it's read from the data file.")
     parser.add_argument("-t", "--time", action="store_true",
                         help=("Generate fake training data."))
     parser.add_argument(
@@ -87,19 +95,18 @@ def get_command_line_arguments(arguments=None):
             os.path.abspath(__file__)) + '/sample_data/models/model.json',
         help=("The location of the model (to write if training, and to read if"
               " visualizing or testing."))
-    parser.add_argument("--generate", action="store_true",
-                        help=("Generate fake training data."))
-    parser.add_argument("--train", action="store_true",
-                        help=("Train a model from training data."))
-    parser.add_argument("--visualize", action="store_true",
-                        help=("Visualize a trained model."))
-    parser.add_argument("--test", action="store_true",
-                        help=("Take an adaptive test from a trained model."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
     else:
         arguments = parser.parse_args()
+
+    # if we haven't been instructed to do anything, then show the help text
+    if not (arguments.generate or arguments.train
+            or arguments.visualize or arguments.test):
+        print "\nMust specify at least one task " + \
+            "(--generate, --train, --visualize, --test).\n"
+        parser.print_help()
 
     # Save the current time for reference when looking at generated models.
     arguments.datetime = str(datetime.datetime.now())
@@ -114,8 +121,8 @@ def save_model(arguments):
     #with open(latest_model, 'r') as latest_model:
     #    with open(arguments.model, 'w') as model_location:
     if True:
-            print "Saving model to %s" % arguments.model
-            shutil.copyfile(latest_model, arguments.model)
+        print "Saving model to %s" % arguments.model
+        shutil.copyfile(latest_model, arguments.model)
 
 
 def get_latest_parameter_file_name(arguments):
@@ -136,7 +143,7 @@ def main():
     run_with_arguments(arguments)
 
 
-def make_necessary_directiories(arguments):
+def make_necessary_directories(arguments):
     """Ensure that output directories for the data we'll be writing exist."""
     roc_dir = arguments.model_directory + 'rocs/'
     model_training_util.mkdir_p([roc_dir])
@@ -188,7 +195,7 @@ def run_with_arguments(arguments):
             arguments.num_students, arguments.num_problems)
     if arguments.train:
         # Set up directories
-        make_necessary_directiories(arguments)
+        make_necessary_directories(arguments)
 
         # Separate provided data file into a train and test set.
         model_training_util.sep_into_train_and_test(arguments)
@@ -203,6 +210,8 @@ def run_with_arguments(arguments):
         #model = get_latest_parameter_file_name(out_dir_name)
 
     if arguments.visualize:
+        # TODO should make_necessary_directories(arguments) be called
+        # here too?
         roc_curve = generate_roc_curve_from_model(arguments)
         print 'visualizing for %s' % arguments.model
         visualize.show_roc({params: [r for r in roc_curve]})
