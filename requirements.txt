@@ -1,3 +1,8 @@
+# These are the libraries you'll need, and you can install them with
+# pip install -r requirements.txt. However, I suggest installing the
+# scipy superpack, as most systems do not support easy installation of
+# these libraries via pip.
+
 affinity
 numpy
 scipy
