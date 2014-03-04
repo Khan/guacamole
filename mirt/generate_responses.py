@@ -123,7 +123,10 @@ def generate_sample_data(num_students=50, num_items=10, include_time=False,
     # Give the students real names for fun
     names = [name.strip() for name in open('sample_data/names.txt', 'r')]
     random.shuffle(names)
-    students = [Student(names[student]) for student in range(num_students)]
+
+    def get_name(student_id):
+        return names[student_id % len(names)]
+    students = [Student(get_name(student)) for student in range(num_students)]
     assessment = Assessment(num_items)
     completed_student_assessments = []
     for student in students:

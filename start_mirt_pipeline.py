@@ -186,8 +186,8 @@ def generate_roc_curve_from_model(arguments):
 
 
 def run_with_arguments(arguments):
-    """Takes you through every step from having a model, training it,
-    testing it, and potentially uploading it to a testing engine.
+    """Generate data, train a model, visualize your trained data, and score
+    students based on a trained model.
     """
     params = gen_param_str(arguments)
     # Set up directories

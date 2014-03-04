@@ -66,10 +66,10 @@ def get_cmd_line_options(arguments=None):
     parser = optparse.OptionParser()
     parser.add_option("-a", "--num_abilities", type=int, default=1,
                       help=("Number of hidden ability units"))
-    parser.add_option("-s", "--sampling_num_steps", type=int, default=100,
+    parser.add_option("-s", "--sampling_num_steps", type=int, default=200,
                       help=("Number of sampling steps to use for "
                             "sample_abilities_diffusion"))
-    parser.add_option("-l", "--sampling_epsilon", type=float, default=0.1,
+    parser.add_option("-l", "--sampling_epsilon", type=float, default=0.2,
                       help=("The length scale to use for sampling update "
                             "proposals"))
     parser.add_option("-n", "--num_epochs", type=int, default=10000,
@@ -83,7 +83,7 @@ def get_cmd_line_options(arguments=None):
                             "for each student.  A sign that there is too "
                             "little training data is if the update step "
                             "length ||dcouplings|| remains large."))
-    parser.add_option("-m", "--max_pass_lbfgs", type=int, default=5,
+    parser.add_option("-m", "--max_pass_lbfgs", type=int, default=10,
                       help=("The number of LBFGS descent steps to do per "
                             "EM iteration"))
     parser.add_option("-p", "--regularization", type=float, default=1e-5,

@@ -158,13 +158,14 @@ def conditional_energy_data(
     # TODO(jascha) - This code could be faster if abilities was stored with
     # the bias term, rather than having to repeatedly copy and concatenate the
     # bias in an inner loop.
-    abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
-    W_time = theta.W_time[exercises_ind, :]
-    sigma_time = theta.sigma_time[exercises_ind]
-    pred_time_taken = np.dot(W_time, abilities)
-    err = pred_time_taken.ravel() - log_time_taken
-    E_time_taken = (err.ravel() ** 2 / (2. * sigma_time.ravel() ** 2) +
-                    0.5 * np.log(sigma_time ** 2))
+    # abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
+    # W_time = theta.W_time[exercises_ind, :]
+    # sigma_time = theta.sigma_time[exercises_ind]
+    # pred_time_taken = np.dot(W_time, abilities)
+    # err = pred_time_taken.ravel() - log_time_taken
+    # E_time_taken = (err.ravel() ** 2 / (2. * sigma_time.ravel() ** 2) +
+    #                 0.5 * np.log(sigma_time ** 2))
+    E_time_taken = 0
 
     E_observed = -np.log(p_data) + E_time_taken
     assert len(E_observed.shape) == 1
@@ -201,14 +202,15 @@ def sample_abilities_diffusion_wrapper(args):
 
     num_steps = options.sampling_num_steps
 
-    #abilities, Eabilities, _, _ = sample_abilities_diffusion(
-    _, Eabilities, mean_abilities, _ = sample_abilities_diffusion(
+    abilities, Eabilities, _, _ = sample_abilities_diffusion(
+    #_, Eabilities, mean_abilities, _ = sample_abilities_diffusion(
         theta, exercises_ind, correct, log_time_taken,
         abilities, num_steps)
 
     # TODO(jascha/eliana) returning mean abilities may lead to bias.
     # (eg, may push weights to be too large)  Investigate this
-    return mean_abilities, Eabilities, user_index
+    #return mean_abilities, Eabilities, user_index
+    return abilities, Eabilities, user_index
 
 
 def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
@@ -356,8 +358,8 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
 
     num_users = float(len(user_states))
 
-    # note that the nu gets divided back out below, so the regularization term
-    # does not end up with a factor of nu.
+    # note that the num_users gets divided back out below, so the
+    # regularization term does not end up with a factor of num_users.
     L += options.regularization * num_users * np.sum(theta_flat ** 2)
     dL_flat = 2. * options.regularization * num_users * theta_flat
     dL = Parameters(theta.num_abilities, theta.num_exercises,
