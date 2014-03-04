@@ -89,7 +89,11 @@ def get_exercises_ind(exercise_names, exercise_ind_dict):
         exercise_names = [exercise_names]
     inds = np.zeros(len(exercise_names), int)
     for i in range(len(exercise_names)):
-        inds[i] = exercise_ind_dict[exercise_names[i]]
+        if exercise_names[i] in exercise_ind_dict:
+            inds[i] = exercise_ind_dict.get(exercise_names[i])
+        else:
+            print 'Warning: Unseen exercise %s' % exercise_names[i]
+            inds[i] = -1
     return inds
 
 
@@ -168,7 +172,7 @@ def conditional_energy_data(
     return E_observed
 
 
-def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
+def sample_abilities_diffusion_wrapper(args):
     """Sample the ability vector for this user
 
     Sample from the posterior over user ability conditioned on the observed
@@ -176,10 +180,13 @@ def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
     distribution.
 
     This is just a wrapper around sample_abilities_diffusion.
+
+    We use this ugly args design pattern because sample_abilities_diffusion
+    is called by a mapper. The costs of parallelization are steep.
     """
     # TODO(jascha) make this a better sampler (eg, use the HMC sampler from
     # TMIRT)
-
+    theta, state, options, user_index = args
     # make sure each student gets a different random sequence
     id = multiprocessing.current_process()._identity
     if len(id) > 0:
@@ -202,9 +209,9 @@ def sample_abilities_diffusion_wrapper(theta, state, options, user_index):
     return abilities, Eabilities, user_index
 
 
-def sample_abilities_diffusion(
-        theta, exercises_ind, correct, log_time_taken, abilities_init=None,
-        num_steps=1, sampling_epsilon=.5):
+def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
+                               abilities_init=None, num_steps=1,
+                               sampling_epsilon=.5):
     """Sample the ability vector for this user from the posterior over user
     ability conditioned on the observed exercise performance. Use
     Metropolis-Hastings with Gaussian proposal distribution.
@@ -240,7 +247,6 @@ def sample_abilities_diffusion(
         4: The standard deviation of the abilities vectors in the entire chain.
     """
     # TODO -- this would run faster with something like an HMC sampler
-
     # initialize abilities using prior
     if abilities_init is None:
         abilities = np.random.randn(theta.num_abilities, 1)
@@ -291,20 +297,16 @@ def sample_abilities_diffusion(
 
 
 def L_dL_singleuser(arg):
-    """ calculate log likelihood and gradient wrt couplings of mIRT model
-        for single user """
+    """Calculate log likelihood and gradient wrt couplings of mIRT model
+       for single user """
     theta, state, options = arg
 
     abilities = state['abilities'].copy()
     correct = state['correct']
     exercises_ind = state['exercises_ind']
 
-    dL_flat_allzeros = Parameters(
-        theta.num_abilities, len(exercises_ind)).flat()
+    dL = Parameters(theta.num_abilities, theta.num_exercises)
 
-    dL_flat_allzeros[:] = 0
-    dL = Parameters(theta.num_abilities, theta.num_exercises,
-                    vals=dL_flat_allzeros)
     # pad the abilities vector with a 1 to act as a bias
     abilities = np.append(abilities.copy(),
                           np.ones((1, abilities.shape[1])),
@@ -377,8 +379,9 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
         Lu, dLu, exercise_indu = r
         L += Lu
         dL.W_correct[exercise_indu, :] += dLu.W_correct
-        #dL.W_time[exercise_indu, :] += dLu.W_time
-        #dL.sigma_time[exercise_indu] += dLu.sigma_time
+        if not options.correct_only:
+            dL.W_time[exercise_indu, :] += dLu.W_time
+            dL.sigma_time[exercise_indu] += dLu.sigma_time
 
     if options.correct_only:
         dL.W_time[:, :] = 0.
@@ -425,8 +428,8 @@ class MirtModel(object):
         """Samples the ability vectors for the students in the data"""
 
         if self.pool is None:
-            results = [sample_abilities_diffusion_wrapper(
-                       self.theta, self.user_states[ind], self.options, ind)
+            results = [sample_abilities_diffusion_wrapper([
+                       self.theta, self.user_states[ind], self.options, ind])
                        for ind in range(len(self.user_states))]
         else:
             results = self.pool.map(
