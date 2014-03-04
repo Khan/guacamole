@@ -66,20 +66,12 @@ First, you can see an ROC curve given your parameters:
 ![ROC curve](imgs/roc.png)
 
 You can also see graphs of each exercise by difficulty and discrimination
-`--sigmoid_viz`
+`./start_mirt_pipeline.py --sigmoid_viz`
 
 ![sigmoids](imgs/sigmoids.png)
 
-Finally, You can see a visualization of how well each student did
-`--student_viz`
-
-TODO(eliana): make visualization
-
-And how difficult each problem is
-`--problem_viz`
-
-TODO(eliana): make visualization
-
+To see how well each student did, call
+'./start_mirt_pipeline.py --score'
 
 **The names**
 

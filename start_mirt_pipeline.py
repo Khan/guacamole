@@ -62,6 +62,12 @@ def get_command_line_arguments(arguments=None):
                         help=("Take an adaptive test from a trained model."))
     parser.add_argument("--score", action="store_true",
                         help=("Score the responses of each student."))
+    parser.add_argument("--roc_viz", action="store_true",
+                        help=("Examine the roc curve for the current model"
+                              " on the data in the data file."))
+    parser.add_argument("--sigmoid_viz", action="store_true",
+                        help=("Examine the sigmoids generated for the model in"
+                              " the model file."))
     parser.add_argument(
         "-d", "--data_file",
         default=os.path.dirname(
@@ -105,7 +111,8 @@ def get_command_line_arguments(arguments=None):
 
     # if we haven't been instructed to do anything, then show the help text
     if not (arguments.generate or arguments.train
-            or arguments.visualize or arguments.test):
+            or arguments.visualize or arguments.test
+            or arguments.roc_viz or arguments.sigmoid_viz):
         print "\nMust specify at least one task " + \
             "(--generate, --train, --visualize, --test).\n"
         parser.print_help()
@@ -203,20 +210,21 @@ def run_with_arguments(arguments):
         model_training_util.sep_into_train_and_test(arguments)
 
         print 'Training MIRT models'
-        # For each combination of the setting for "abilities" and
-        # "response_time_mode", we want to fit a model.
-        # Loop through the combinations and fit a model for each.
         generate_model_with_parameters(arguments)
         save_model(arguments)
-        #out_dir_name = arguments.model_directory + params + '/'
-        #model = get_latest_parameter_file_name(out_dir_name)
 
+    # When visualize is true, we do all visualizations
     if arguments.visualize:
-        # TODO should make_necessary_directories(arguments) be called
-        # here too?
+        arguments.roc_viz = True
+        arguments.sigmoid_viz = True
+
+    if arguments.roc_viz:
+        print 'Generating ROC for %s' % arguments.model
         roc_curve = generate_roc_curve_from_model(arguments)
-        print 'visualizing for %s' % arguments.model
+        print 'Visualizing roc for %s' % arguments.model
         visualize.show_roc({params: [r for r in roc_curve]})
+    if arguments.sigmoid_viz:
+        print 'Visualizing sigmoids for %s' % arguments.model
         visualize.show_exercises(arguments.model)
 
     if arguments.test:
