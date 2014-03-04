@@ -19,6 +19,12 @@ Example Use:
     This will open an interactive session where the test will ask you questions
     according to whatever will cause the model to gain the most information to
     predict your abilities.
+
+Authors: Eliana Feasley, Jace Kohlmeier, Matt Faus, Jascha Sohl-Dickstein
+(2014)
+This software is made available under the Creative Commons
+Attribution-Noncommercial License.
+( http://creativecommons.org/licenses/by-nc/4.0/ )
 """
 import argparse
 import datetime
@@ -125,8 +131,8 @@ def get_command_line_arguments(arguments=None):
     if not (arguments.generate or arguments.train
             or arguments.visualize or arguments.test
             or arguments.roc_viz or arguments.sigmoid_viz):
-        print "\nMust specify at least one task " + \
-            "(--generate, --train, --visualize, --test).\n"
+        print "\nMust specify at least one task (--generate, --train," + \
+              " --visualize, --test, --roc_viz, --sigmoid_viz).\n"
         parser.print_help()
 
     # Save the current time for reference when looking at generated models.
