@@ -10,7 +10,17 @@ Theory (MIRT) models, including both item correctness and response time if you
 have that data.  The other, called Knowledge Params, trains a classifier with a mixture of random and hand designed features to predict whether the the next
 item will be answered correctly based upon the response history. The MIRT model is probably better suited to testing data (at Khan Academy, we use it for our assessments) and the Knowledge model is probably better suited to online tutoring data (we use it to evaluate the probability of answering the next question in a sequence correctly)
 
+**Getting Started**
+
+To generate some fake data, run the command
+`./start_mirt_pipeline.py --generate`
+
+
 **Guide to Using the Item Response Theory Tool**
+
+You can use the guacamole item response theory tool to generate and examine
+testing data.
+
 
 To generate feedback
 `./start_mirt_pipeline.py --generate`

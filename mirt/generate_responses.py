@@ -105,10 +105,9 @@ class StudentAssessment(object):
 
     def response_strings(self):
         """Yield each response as a string suitable for training input"""
-        for response_num, response in enumerate(self.responses):
+        for response in self.responses:
             yield string.join([
                 self.student.student_id,
-                str(response_num),
                 response.item.item_id,
                 str(response.time_taken),
                 str(response.correct),

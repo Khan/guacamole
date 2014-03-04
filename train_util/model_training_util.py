@@ -85,7 +85,7 @@ class FieldIndexer(object):
         'time_taken', 'problem_number', 'correct', 'number_attempts',
         'number_hints', 'eventually_correct', 'topic_mode', 'dt']
 
-    simple_fields = ['user', 'time_done', 'exercise', 'time_taken', 'correct']
+    simple_fields = ['user', 'exercise', 'time_taken', 'correct']
 
 
 def sequential_problem_numbers(attempts, idx):
