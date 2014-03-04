@@ -475,6 +475,7 @@ class MirtModel(object):
 
         # Maximization step
         old_theta_flat = self.theta.flat()
+
         # Call the minimizer
         theta_flat, L, _ = scipy.optimize.fmin_l_bfgs_b(
             L_dL,
@@ -482,6 +483,7 @@ class MirtModel(object):
             args=(
                 self.user_states, self.num_exercises, self.options, self.pool),
             maxfun=self.options.max_pass_lbfgs, m=100)
+
         self.theta = Parameters(self.options.num_abilities, self.num_exercises,
                                 vals=theta_flat)
         if self.options.correct_only:
