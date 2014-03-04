@@ -34,8 +34,12 @@ class AssessmentItem(mirt_util.Parameters):
 class Assessment(object):
     """An assessment is an ordered collection of assessment items"""
 
-    def __init__(self, num_items):
+    def __init__(self, num_items, exercises):
         self.items = [AssessmentItem(item_id) for item_id in range(num_items)]
+        # Use x.W_correct[0, 0]) as a proxy for difficulty
+        self.items.sort(key=lambda x: x.W_correct[0, 1], reverse=True)
+        for item_num, item in enumerate(self.items):
+            item.item_id = exercises[len(exercises) * item_num / num_items]
 
     def get_items(self, num_items=0, randomize=False):
         """Draw a set of items from the assessment
@@ -121,12 +125,14 @@ def generate_sample_data(num_students=50, num_items=10, include_time=False,
     """
     # Give the students real names for fun
     names = [name.strip() for name in open('sample_data/names.txt', 'r')]
+    exercises = [name.strip() for name in open(
+        'sample_data/exercise_names.txt', 'r')]
     random.shuffle(names)
 
     def get_name(student_id):
         return names[student_id % len(names)]
     students = [Student(get_name(student)) for student in range(num_students)]
-    assessment = Assessment(num_items)
+    assessment = Assessment(num_items, exercises)
     completed_student_assessments = []
     for student in students:
         student_assessment = StudentAssessment(student, assessment)

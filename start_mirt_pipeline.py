@@ -145,11 +145,8 @@ def save_model(arguments):
     """Look at all generated models, and save the most recent to the correct
     location"""
     latest_model = get_latest_parameter_file_name(arguments)
-    #with open(latest_model, 'r') as latest_model:
-    #    with open(arguments.model, 'w') as model_location:
-    if True:
-        print "Saving model to %s" % arguments.model
-        shutil.copyfile(latest_model, arguments.model)
+    print "Saving model to %s" % arguments.model
+    shutil.copyfile(latest_model, arguments.model)
 
 
 def get_latest_parameter_file_name(arguments):
