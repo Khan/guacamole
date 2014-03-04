@@ -13,8 +13,8 @@ class Student(object):
     """Represent a student (test-taker) with certain ability vectors"""
 
     def __init__(self, student_id, num_abilities=1):
-        self.student_id = str(student_id)
-        self.abilities = np.random.randn(num_abilities, 1)
+        self.student_id = student_id
+        self.abilities = np.random.randn(num_abilities, 1) * 3
 
 
 class AssessmentItem(mirt_util.Parameters):

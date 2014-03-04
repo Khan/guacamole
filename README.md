@@ -14,6 +14,7 @@ item will be answered correctly based upon the response history. The MIRT model 
 
 To use this library, you'll need to have numpy, scipy, and matplotlib installed on your machine. If this is not already the case, I recommend using the [Scipy Superpack](http://fonnesbeck.github.io/ScipySuperpack/) for Mac, or following the [SciPy Stack installation instructions](http://www.scipy.org/install.html) for Linux or Windows.
 
+If you've done this, you're good. Go out drinking after taking [this quiz](https://docs.google.com/forms/d/1zJMCrGrcZvJjVuyncQ-NRArMuefVysEDaX6Qz8RybSk/viewform) for fun!
 
 To generate some fake data, run the command
 `./start_mirt_pipeline.py --generate`
