@@ -63,12 +63,12 @@ A few visualizations are available for the data.
 First, you can see an ROC curve given your parameters:
 `--roc_viz`
 
-TODO(eliana): add images
+![ROC curve](imgs/roc.png)
 
 You can also see graphs of each exercise by difficulty and discrimination
 `--sigmoid_viz`
 
-TODO(eliana): add images
+![sigmoids](imgs/sigmoids.png)
 
 Finally, You can see a visualization of how well each student did
 `--student_viz`
