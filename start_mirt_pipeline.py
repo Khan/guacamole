@@ -27,7 +27,7 @@ import os
 import shutil
 import sys
 
-from mirt import mirt_train_EM, generate_predictions, score_students
+from mirt import mirt_train_EM, generate_predictions, score
 from mirt import visualize, adaptive_pretest, generate_responses
 from train_util import model_training_util
 
@@ -62,6 +62,8 @@ def get_command_line_arguments(arguments=None):
                         help=("Take an adaptive test from a trained model."))
     parser.add_argument("--score", action="store_true",
                         help=("Score the responses of each student."))
+    parser.add_argument("--report", action="store_true",
+                        help=("Report on the parameters of each exercise."))
     parser.add_argument("--roc_viz", action="store_true",
                         help=("Examine the roc curve for the current model"
                               " on the data in the data file."))
@@ -103,13 +105,16 @@ def get_command_line_arguments(arguments=None):
             os.path.abspath(__file__)) + '/sample_data/models/model.json',
         help=("The location of the model (to write if training, and to read if"
               " visualizing or testing."))
-    parser.add_option(
+    parser.add_argument(
         "-q", "--num_replicas", type=int, default=1, help=(
             "The number of copies of the data to train on.  If there is too "
             "little training data, increase this number in order to maintain "
             "multiple samples from the abilities vector for each student.  A "
             "sign that there is too little training data is if the update step"
             " length ||dcouplings|| remains large."))
+    parser.add_argument(
+        "-r", "--resume_from_file", default='',
+        help=("Name of a json file to bootstrap the couplings."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
@@ -238,9 +243,13 @@ def run_with_arguments(arguments):
         print 'Starting adaptive pretest'
         adaptive_pretest.main(arguments.model)
 
+    if arguments.report:
+        print "Generating problems report based on params file."
+        score.exercise_report(arguments.model, arguments.data_file)
+
     if arguments.score:
         print "Scoring all students based on trained test file"
-        score_students.main(arguments.model, arguments.data_file)
+        score.score_students(arguments.model, arguments.data_file)
 
 if __name__ == '__main__':
     main()

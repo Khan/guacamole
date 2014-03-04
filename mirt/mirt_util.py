@@ -415,7 +415,7 @@ class MirtModel(object):
             # to output features from a previously trained model.  To use this
             # hacky version, pass --num_epochs 0 and you must pass the same
             # data file the model in resume_from_file was trained on.
-            resume_from_model = np.load(options.resume_from_file)
+            resume_from_model = json_to_data(options.resume_from_file)
             self.theta = resume_from_model['theta'][()]
             exercise_ind_dict = resume_from_model['exercise_ind_dict']
             sys.stderr.write("Loaded parameters from %s" % (

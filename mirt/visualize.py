@@ -50,5 +50,8 @@ def show_exercises(parameter_file):
                 exercises.index(exercise)])
     for exercise in exercises:
         plt.plot(abilities_to_plot, exercise_plots[exercise], label=exercise)
-    plt.legend()
+    plt.xlabel('Student Ability')
+    plt.ylabel('P(Answer Correctly)')
+    plt.title('One parameter IRT model')
+    plt.legend(loc='best')
     plt.show()

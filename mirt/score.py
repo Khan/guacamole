@@ -11,8 +11,6 @@ problem took, if you choose. The output will include the model's estimation of
 the student's accuracy on each of the assessment items as well as their overall
 score ()
 """
-import sys
-
 import mirt.engine
 import mirt.mirt_engine
 import mirt.mirt_util
@@ -57,8 +55,8 @@ def get_student_responses(students_filepath, data_format='simple'):
             history.append(response)
 
 
-def main(model_file, students_filepath):
-    """Starts an interactive session with a given parameter student
+def score_students(model_file, students_filepath):
+    """Prints the estimated score for each student in the data file
 
     Arguments:
         Takes the parameter file name for the mirt json parameter
@@ -75,10 +73,3 @@ def main(model_file, students_filepath):
         engine = ScoreEngine(mirt.mirt_engine.MIRTEngine(data))
         engine.update_history(history)
         engine.print_score()
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        main(sys.argv[1])
-    else:
-        exit("Usage: python %s json_model_file" % sys.argv[0])

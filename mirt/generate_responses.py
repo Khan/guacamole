@@ -28,7 +28,7 @@ class AssessmentItem(mirt_util.Parameters):
         # random normal distribution, adding one to the dimensionality to
         # account for bias.
         self.W_correct = np.random.rand(1, num_abilities + 1)
-        self.W_correct[:-1] = self.W_correct + 1
+        #self.W_correct[:1] = self.W_correct + 1
 
 
 class Assessment(object):
