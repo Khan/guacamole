@@ -27,7 +27,7 @@ import os
 import shutil
 import sys
 
-from mirt import mirt_train_EM, generate_predictions
+from mirt import mirt_train_EM, generate_predictions, score_students
 from mirt import visualize, adaptive_pretest, generate_responses
 from train_util import model_training_util
 
@@ -93,6 +93,10 @@ def get_command_line_arguments(arguments=None):
                         help=("Train a model from training data."))
     parser.add_argument("--visualize", action="store_true",
                         help=("Visualize a trained model."))
+    parser.add_argument("--score", action="store_true",
+                        help=("Score students based on a model file."
+                              " The scored students are those in the data"
+                              " file."))
     parser.add_argument("--test", action="store_true",
                         help=("Take an adaptive test from a trained model."))
 
@@ -209,7 +213,12 @@ def run_with_arguments(arguments):
         visualize.show_exercises(arguments.model)
 
     if arguments.test:
+        print 'Starting adaptive pretest'
         adaptive_pretest.main(arguments.model)
+
+    if arguments.score:
+        print "Scoring all students based on trained test file"
+        score_students.main(arguments.model, arguments.data_file)
 
 if __name__ == '__main__':
     main()
