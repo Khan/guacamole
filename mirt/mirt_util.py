@@ -202,11 +202,13 @@ def sample_abilities_diffusion_wrapper(args):
     num_steps = options.sampling_num_steps
 
     #abilities, Eabilities, _, _ = sample_abilities_diffusion(
-    _, Eabilities, abilities, _ = sample_abilities_diffusion(
+    _, Eabilities, mean_abilities, _ = sample_abilities_diffusion(
         theta, exercises_ind, correct, log_time_taken,
         abilities, num_steps)
 
-    return abilities, Eabilities, user_index
+    # TODO(jascha/eliana) returning mean abilities may lead to bias.
+    # (eg, may push weights to be too large)  Investigate this
+    return mean_abilities, Eabilities, user_index
 
 
 def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
@@ -424,7 +426,7 @@ class MirtModel(object):
         self.exercise_ind_dict = exercise_ind_dict
         self.user_states = user_states
 
-    def get_results(self):
+    def get_sampling_results(self):
         """Samples the ability vectors for the students in the data"""
 
         if self.pool is None:
@@ -441,14 +443,16 @@ class MirtModel(object):
 
     def run_em_step(self, epoch):
         """Run a single step of expectation maximization"""
+
         sys.stderr.write("epoch %d, " % epoch)
+
         # Expectation step
         # Compute (and print) the energies during learning as a diagnostic.
-        # These should decrease.
+        # These should mostly decrease.
         average_energy = 0.
         # TODO(jascha) this would be faster if user_states was divided into
         # minibatches instead of single students
-        results = self.get_results()
+        results = self.get_sampling_results()
         for result in results:
             abilities, El, ind = result
             self.user_states[ind]['abilities'] = abilities.copy()

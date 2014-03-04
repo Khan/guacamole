@@ -49,13 +49,12 @@ def get_student_responses(students_filepath, data_format='simple'):
             correct = line[indexer.correct]
             exercise = line[indexer.exercise]
             if history and user != current_user:
+                yield user, history
                 current_user = user
-                yield history
                 history = []
             response = mirt.engine.ItemResponse.new(
                 correct=correct, exercise=exercise)
             history.append(response)
-        yield history
 
 
 def main(model_file, students_filepath):
@@ -71,9 +70,10 @@ def main(model_file, students_filepath):
     """
     data = mirt.mirt_util.json_to_data(model_file)
     students = get_student_responses(students_filepath)
-    for student in students:
+    for name, history in students:
+        print name,
         engine = ScoreEngine(mirt.mirt_engine.MIRTEngine(data))
-        engine.update_history(student)
+        engine.update_history(history)
         engine.print_score()
 
 
