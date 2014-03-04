@@ -120,7 +120,10 @@ def generate_sample_data(num_students=50, num_items=10, include_time=False,
                          num_abilities=1):
     """Generate a series of student assessments and simulate completing them
     """
-    students = [Student(student_id) for student_id in range(num_students)]
+    # Give the students real names for fun
+    names = [name.strip() for name in open('sample_data/names.txt', 'r')]
+    random.shuffle(names)
+    students = [Student(names[student]) for student in range(num_students)]
     assessment = Assessment(num_items)
     completed_student_assessments = []
     for student in students:

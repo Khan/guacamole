@@ -48,22 +48,27 @@ A few visualizations are available for the data.
 First, you can see an ROC curve given your parameters:
 `--roc_viz`
 
-# TODO(eliana)
+TODO(eliana): add images
 
 You can also see graphs of each exercise by difficulty and discrimination
 `--sigmoid_viz`
 
-# TODO(eliana)
+TODO(eliana): add images
 
 Finally, You can see a visualization of how well each student did
 `--student_viz`
 
-# TODO(eliana)
+TODO(eliana): make visualization
 
 And how difficult each problem is
 `--problem_viz`
 
-# TODO(eliana)
+TODO(eliana): make visualization
+
+
+**The names**
+
+The names are from the US census bureau.
 
 **Khan Academy Data**
 

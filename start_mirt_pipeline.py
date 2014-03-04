@@ -188,7 +188,7 @@ def run_with_arguments(arguments):
     if arguments.generate:
         print 'Generating Responses'
         generate_responses.run(arguments)
-        print 'Generated responses for %d students and %d ' % (
+        print 'Generated responses for %d students and %d problems' % (
             arguments.num_students, arguments.num_problems)
     if arguments.train:
         # Set up directories

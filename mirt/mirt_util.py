@@ -376,6 +376,12 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
     for r in rslts:
         Lu, dLu, exercise_indu = r
         L += Lu
+        print 'r'
+        print r
+        print 'dl'
+        print dL.W_correct[exercise_indu, :]
+        print 'dLu'
+        print dLu.W_correct
         dL.W_correct[exercise_indu, :] += dLu.W_correct
         dL.W_time[exercise_indu, :] += dLu.W_time
         dL.sigma_time[exercise_indu] += dLu.sigma_time
