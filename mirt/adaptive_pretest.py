@@ -28,18 +28,22 @@ class TestEngine(object):
 
     def print_current_score(self):
         """Print the current score for the current history"""
-        print "Current score is now %.4f (mean std=%.4f, max std=%.4f)." % (
-            self.engine.score(self.history), min(self.engine.abilities_stdev),
-            max(self.engine.abilities_stdev))
+        print "Current score is now %.4f." % (
+            self.engine.score(self.history))
+        if len(self.engine.abilities) > 1:
+            print "(mean std=%.4f, max std=%.4f)." % (
+                min(self.engine.abilities_stdev),
+                max(self.engine.abilities_stdev))
 
-    def interactive_test(self):
+    def interactive_test(self, num_exercises=5):
         """A simple command line interface to mirt parameters."""
 
-        use_time = raw_input("Use time as a feature? [y/N]: ")
+        use_time = False  # raw_input("Use time as a feature? [y/N]: ")
         # Accept any answer starting with y or Y as a yes
         time = use_time and use_time[0] in ['y', 'Y']
 
-        while not self.engine.is_complete(self.history):
+        while (not self.engine.is_complete(self.history)
+               and len(self.history) < num_exercises):
             exercise = self.engine.next_suggested_item(self.history).item_id
             print "\nQuestion #%d, Exercise type: %s" % (
                 len(self.history), exercise)
@@ -62,13 +66,11 @@ class TestEngine(object):
         print 'Estimated Exercise Accuracies:'
         print json.dumps(
             self.engine.estimated_exercise_accuracies(self.history), indent=4)
-        print 'Abilities:'
-        print self.engine.abilities
         print 'Score:'
         print self.engine.score(self.history)
 
 
-def main(model_file):
+def main(model_file, num_exercises):
     """Starts an interactive session with a given parameter student
 
     Arguments:
@@ -81,7 +83,7 @@ def main(model_file):
     """
     data = mirt.mirt_util.json_to_data(model_file)
     engine = TestEngine(mirt.mirt_engine.MIRTEngine(data))
-    engine.interactive_test()
+    engine.interactive_test(num_exercises=num_exercises)
     engine.print_outcome()
 
 

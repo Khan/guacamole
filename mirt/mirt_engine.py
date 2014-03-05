@@ -83,8 +83,8 @@ class MIRTEngine(engine.Engine):
         assessment has not been fully completed.  Check if is_complete().
         """
         # use lots of steps when estimating score to make
-        # the score seeem close to deterministic
-        self._update_abilities(history, num_steps=50)
+        # the score seem close to deterministic
+        self._update_abilities(history, num_steps=2000)
         return np.mean(self.abilities)
 
     def readable_score(self, history):
@@ -162,5 +162,5 @@ class MIRTEngine(engine.Engine):
                 self.theta, exercises_ind, correct, log_time_taken,
                 self.abilities, num_steps=num_steps))
 
-        self.abilities = mean_abilities if use_mean else sample_abilities
+        self.abilities = mean_abilities  # if use_mean else sample_abilities
         self.abilities_stdev = stdev

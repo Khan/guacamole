@@ -93,7 +93,7 @@ def get_command_line_arguments(arguments=None):
         help="Number of problems to generate data for. Only meaningful when "
         "generating fake data - otherwise it's read from the data file.")
     parser.add_argument("-t", "--time", action="store_true",
-                        help=("Generate fake training data."))
+                        help=("Whether to include time as a parameter."))
     parser.add_argument(
         '-w', '--workers', type=int, default=1,
         help=("The number of processes to use to parallelize mirt training"))
@@ -118,6 +118,9 @@ def get_command_line_arguments(arguments=None):
             "multiple samples from the abilities vector for each student.  A "
             "sign that there is too little training data is if the update step"
             " length ||dcouplings|| remains large."))
+    parser.add_argument(
+        "-i", "--items", type=int, default=5, help=(
+            "Number of items to use in adaptive test."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
@@ -247,7 +250,7 @@ def run_with_arguments(arguments):
 
     if arguments.test:
         print 'Starting adaptive pretest'
-        adaptive_pretest.main(arguments.model)
+        adaptive_pretest.main(arguments.model, arguments.items)
 
     if arguments.report:
         print "Generating problems report based on params file."
