@@ -1,5 +1,5 @@
-subtraction_1
 addition_1
+subtraction_1
 reading_pictographs_1
 multiplication_0.5
 division_0.5
@@ -24,6 +24,7 @@ reading_bar_charts_2
 recognizing_fractions
 subtraction_3
 reading_tables_1
+creating_box_and_whisker_plots
 addition_4
 recognizing_fractions_0.5
 comparing_decimals_1
@@ -106,7 +107,6 @@ dividing_fractions_word_problems
 negative_number_word_problems
 understanding-angles
 dividing_decimals_1
-adding-and-subtracting-fractions-with-like-denominators-word-problems
 complementary_and_supplementary_angles
 logical_arguments_deductive_reasoning
 recognizing-parallel-and-perpendicular-lines
@@ -383,7 +383,6 @@ regrouping-decimals
 inscribed_angles_3
 interpreting-scale-drawings
 multiplying_mixed_numbers_1
-scalar_matrix_multiplication
 angle_addition_postulate
 direct_and_inverse_variation
 drawing-polygons
@@ -400,7 +399,6 @@ systems-of-nonlinear-equations
 multiplying_radicals
 solving_quadratics_by_factoring
 line_relationships
-limits_1
 recognizing-rational-and-irrational-numbers
 comparing-features-of-functions-0-5
 adding_vectors
@@ -422,7 +420,6 @@ angles_of_a_polygon
 permutations_1
 comparing-features-of-functions-2
 solving_quadratics_by_factoring_2
-new_definitions_1
 adding_and_subtracting_rational_expressions
 interpreting-line-plots-with-fraction-multiplication-and-division
 drawing-inferences-from-random-samples
@@ -467,6 +464,7 @@ factoring_polynomials_with_two_variables
 rate_problems_2
 graphs-of-functions-and-their-derivatives
 graphing_systems_of_equations
+trig_addition_identities
 equation_of_a_line
 extreme-values-from-graphs
 equation_of_a_circle_1
@@ -488,7 +486,6 @@ factoring_polynomials_by_grouping_1
 constructing-proportions-to-solve-application-problems
 factoring_difference_of_squares_3
 squeeze-theorem
-creating_box_and_whisker_plots
 shaded_areas
 geometric_sequences_2
 special_derivatives
@@ -514,7 +511,6 @@ understanding-series
 logarithms_2
 converting_repeating_decimals_to_fractions_2
 graphing_parabolas_0.5
-power_rule
 graphing_parabolas_1
 matrix_transpose
 convergence-and-divergence-of-sequences
@@ -563,7 +559,6 @@ absolute_value_of_complex_numbers
 constructions_1
 continuity
 graphing_systems_of_inequalities
-trig_addition_identities
 multiplying_a_matrix_by_a_matrix
 range_of_a_function
 dividing_complex_numbers
@@ -589,14 +584,17 @@ standard_deviation
 recognizing-rational-and-irrational-expressions
 maclaurin-series-for-sin-x--cos-x--and-e-x
 probability_with_perm_comb
+limits_1
+z_scores_2
+scalar_matrix_multiplication
 law_of_cosines
 completing_the_square_2
 variance
+power_rule
 multiplying_and_dividing_rational_expressions_4
 simplifying_rational_expressions_3
 multiplying_and_dividing_rational_expressions_3
 matrix_inverse_2x2
-z_scores_2
 dividing-polynomials-with-remainders
 geometric-series
 applications-of-derivatives--motion-along-a-line
@@ -620,4 +618,3 @@ modeling-with-exponential-functions
 graphs-of-trigonometric-functions
 features-of-trigonometric-functions
 graphs-of-radical-functions
-cc-radians-and-arc-length

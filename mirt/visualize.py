@@ -52,6 +52,27 @@ def show_exercises(parameter_file):
         plt.plot(abilities_to_plot, exercise_plots[exercise], label=exercise)
     plt.xlabel('Student Ability')
     plt.ylabel('P(Answer Correctly)')
-    plt.title('One parameter IRT model')
+    plt.title('Two parameter IRT model')
     plt.legend(loc='best')
     plt.show()
+
+
+def print_report(parameter_file):
+    """Print interpretable results given a json file"""
+    data = mirt_util.json_to_data(parameter_file)
+    parameters = data['params']
+    print 'Generating Report for %s' % parameter_file
+    print "%50s\t%s\t" % ('Exercise', 'Bias'),
+    for i in range(parameters.num_abilities):
+        print '%s\t' % i,
+    print
+    exercises = parameters.exercise_ind_dict.keys()
+    exercises_to_parameters = [(ex, parameters.get_params_for_exercise(ex))
+                               for ex in exercises]
+    # Sort by the difficulty bias
+    exercises_to_parameters.sort(key=lambda x: x[-1][-1])
+    for ex, param in exercises_to_parameters:
+        print "%50s\t%.4f\t" % (ex, param[-1]),
+        for p in param[:-1]:
+            print "\t%.4f\t" % p,
+        print

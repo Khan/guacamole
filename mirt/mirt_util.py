@@ -68,6 +68,25 @@ class Parameters(object):
         return np.concatenate((self.W_correct.ravel(), self.W_time.ravel(),
                                self.sigma_time.ravel()))
 
+    def bias(self):
+        """Generate a dictionary containing, for each exercise, the bias"""
+        bias_dict = {}
+        for exercise, index in self.exercise_ind_dict.iteritems():
+            bias_dict[exercise] = self.W_correct[index][-1]
+
+    def discriminations(self):
+        """Generate a dictionary containing, for each exercise, the
+        discriminations
+        """
+        bias_dict = {}
+        for exercise, index in self.exercise_ind_dict.iteritems():
+            bias_dict[exercise] = self.W_correct[index][:-1]
+
+    def get_params_for_exercise(self, exercise):
+        """Return the parameters vector for a given exercise"""
+        index = self.exercise_ind_dict.get(exercise)
+        return self.W_correct[index]
+
 
 def get_exercises_ind(exercise_names, exercise_ind_dict):
     """Turn an array of exercise names into an array of indices within the
@@ -203,13 +222,11 @@ def sample_abilities_diffusion_wrapper(args):
     num_steps = options.sampling_num_steps
 
     abilities, Eabilities, _, _ = sample_abilities_diffusion(
-    #_, Eabilities, mean_abilities, _ = sample_abilities_diffusion(
         theta, exercises_ind, correct, log_time_taken,
         abilities, num_steps)
 
     # TODO(jascha/eliana) returning mean abilities may lead to bias.
     # (eg, may push weights to be too large)  Investigate this
-    #return mean_abilities, Eabilities, user_index
     return abilities, Eabilities, user_index
 
 

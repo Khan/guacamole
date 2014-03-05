@@ -248,7 +248,7 @@ def run_with_arguments(arguments):
 
     if arguments.report:
         print "Generating problems report based on params file."
-        score.exercise_report(arguments.model, arguments.data_file)
+        visualize.print_report(arguments.model)
 
     if arguments.score:
         print "Scoring all students based on trained test file"
