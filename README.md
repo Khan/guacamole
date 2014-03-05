@@ -43,7 +43,7 @@ That `-n 2` is just to make things faster - this will not be a good model. It'll
 
 If you want a quick overview of what's available and you hate reading when it's not on the terminal, run
 
-`./start_mirt_pipeline --help`
+`./start_mirt_pipeline.py --help`
 
 for an overview of the arguments
 
@@ -79,11 +79,11 @@ These columns are name, exercise, time_taken, and correct. You can read more abo
 
 You can train a model on data with
 
-`./start_mirt_pipeline.py --generate`
+`./start_mirt_pipeline.py --train`
 
 By default, this looks at the place that generate writes - at `sample_data/all.responses`. If you're interested in using your own data, you can use
 
-`./start_mirt_pipeline.py --generate --data_file <PATH/TO/YOUT/DATA>`
+`./start_mirt_pipeline.py --train --data_file <PATH/TO/YOUT/DATA>`
 
 **OPTIONAL: PARALLELIZATION)**
 This will run for a while. If you want it to go faster, you can parallelize with the `-w` command. I use `-w 6` on my eight-core computer. On a cluster, the number of workers can be really big, and training can be really fast. On some systems, (like Ubuntu) this only works when you have `affinity` installed - if multiple workers does not result in any speedup, try `pip install affinity`.
@@ -151,6 +151,8 @@ This prints a student's id and their score. For instance:
     KATHRYN 0.245113015341
 
 I got these names from the census, in case you're wondering. I really like the internet.
+
+You can score with `./start_mirt_pipeline.py --score`
 
 ### Adaptive Test
 Any time after training, we can create an adaptive test that gets the most information possible per question.
