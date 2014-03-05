@@ -118,21 +118,25 @@ def get_command_line_arguments(arguments=None):
             "multiple samples from the abilities vector for each student.  A "
             "sign that there is too little training data is if the update step"
             " length ||dcouplings|| remains large."))
-    parser.add_argument(
-        "-r", "--resume_from_file", default='',
-        help=("Name of a json file to bootstrap the couplings."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
     else:
         arguments = parser.parse_args()
 
+    # When visualize is true, we do all visualizations
+    if arguments.visualize:
+        arguments.roc_viz = True
+        arguments.sigmoid_viz = True
+        arguments.report = True
     # if we haven't been instructed to do anything, then show the help text
     if not (arguments.generate or arguments.train
             or arguments.visualize or arguments.test
-            or arguments.roc_viz or arguments.sigmoid_viz):
-        print "\nMust specify at least one task (--generate, --train," + \
-              " --visualize, --test, --roc_viz, --sigmoid_viz).\n"
+            or arguments.roc_viz or arguments.sigmoid_viz
+            or arguments.report or arguments.score):
+        print ("\nMust specify at least one task (--generate, --train,"
+               " --visualize, --test, --report, --roc_viz, --sigmoid_viz, "
+               "--score).\n")
         parser.print_help()
 
     # Save the current time for reference when looking at generated models.
@@ -191,7 +195,8 @@ def generate_model_with_parameters(arguments):
         '-w', str(arguments.workers),
         '-n', str(arguments.num_epochs),
         '-f', arguments.model_directory + 'train.responses',
-        '-o', out_dir_name]
+        '-o', out_dir_name
+        ]
     if arguments.time:
         mirt_train_params.append('-z')
 
@@ -221,6 +226,8 @@ def run_with_arguments(arguments):
         print 'Generated responses for %d students and %d problems' % (
             arguments.num_students, arguments.num_problems)
     if arguments.train:
+        # Only re-separate into test and train when resume_from_file
+        # is False.
         # Separate provided data file into a train and test set.
         model_training_util.sep_into_train_and_test(arguments)
 
@@ -228,16 +235,12 @@ def run_with_arguments(arguments):
         generate_model_with_parameters(arguments)
         save_model(arguments)
 
-    # When visualize is true, we do all visualizations
-    if arguments.visualize:
-        arguments.roc_viz = True
-        arguments.sigmoid_viz = True
-
     if arguments.roc_viz:
         print 'Generating ROC for %s' % arguments.model
         roc_curve = generate_roc_curve_from_model(arguments)
         print 'Visualizing roc for %s' % arguments.model
         visualize.show_roc({params: [r for r in roc_curve]})
+
     if arguments.sigmoid_viz:
         print 'Visualizing sigmoids for %s' % arguments.model
         visualize.show_exercises(arguments.model)

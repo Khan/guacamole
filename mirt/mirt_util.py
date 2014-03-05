@@ -433,8 +433,8 @@ class MirtModel(object):
             # hacky version, pass --num_epochs 0 and you must pass the same
             # data file the model in resume_from_file was trained on.
             resume_from_model = json_to_data(options.resume_from_file)
-            self.theta = resume_from_model['theta'][()]
-            exercise_ind_dict = resume_from_model['exercise_ind_dict']
+            self.theta = resume_from_model['params']
+            exercise_ind_dict = self.theta.exercise_ind_dict
             sys.stderr.write("Loaded parameters from %s" % (
                 options.resume_from_file))
         self.num_exercises = num_exercises

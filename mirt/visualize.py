@@ -24,6 +24,7 @@ def show_roc(predictions):
 
 def show_exercises(parameter_file):
     """Display a sigmoid for each exercise."""
+    plt.figure(1)
     data = mirt_util.json_to_data(parameter_file)
     parameters = data['params']
     exercise_ind_dict = parameters.exercise_ind_dict
@@ -53,7 +54,7 @@ def show_exercises(parameter_file):
     plt.xlabel('Student Ability')
     plt.ylabel('P(Answer Correctly)')
     plt.title('Two parameter IRT model')
-    plt.legend(loc='best')
+    plt.legend(loc='best', prop={'size': 6})
     plt.show()
 
 
@@ -62,9 +63,9 @@ def print_report(parameter_file):
     data = mirt_util.json_to_data(parameter_file)
     parameters = data['params']
     print 'Generating Report for %s' % parameter_file
-    print "%50s\t%s\t" % ('Exercise', 'Bias'),
+    print "%50s\t%s\t\t" % ('Exercise', 'Bias'),
     for i in range(parameters.num_abilities):
-        print '%s\t' % i,
+        print 'Dim. %s\t' % (i + 1),
     print
     exercises = parameters.exercise_ind_dict.keys()
     exercises_to_parameters = [(ex, parameters.get_params_for_exercise(ex))
