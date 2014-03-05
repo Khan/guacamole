@@ -98,7 +98,7 @@ def get_command_line_arguments(arguments=None):
         '-w', '--workers', type=int, default=1,
         help=("The number of processes to use to parallelize mirt training"))
     parser.add_argument(
-        "-n", "--num_epochs", type=int, default=100,
+        "-n", "--num_epochs", type=int, default=20,
         help=("The number of EM iterations to do during learning"))
     parser.add_argument(
         "-o", "--model_directory",
