@@ -12,7 +12,7 @@ have that data (coming soon). The MIRT model is well suited to testing data (at 
 
 # guacamole walkthrough
 
-![guacamole](imgs/guacamole.png)
+![guacamole](imgs/guacamole.jpg)
 
 #### **guacamole** is a useful tool for teachers and researchers to analyze and improve test items and students.
 
