@@ -20,9 +20,9 @@ have that data (coming soon). The MIRT model is well suited to testing data (at 
 ###Getting guacamole to run:
 
 ####Get numpy, scipy, and matplotlib working
-There are several strategies for this, depending on platform. The first thing to know is that you almost certianly should not use `pip`. I don't know anyone who has installed all of these with pip, on any platform ever.
+There are several strategies for this, depending on platform.
 
-I recommend using the [Scipy Superpack](http://fonnesbeck.github.io/ScipySuperpack/) for Mac, or following the [SciPy Stack installation instructions](http://www.scipy.org/install.html) for Linux or Windows. For a heavier-weight but easy alternative, you can try [Anaconda](https://store.continuum.io/cshop/anaconda/).
+The normal and generally correct way to install Python libraries is useing `pip`, but that often chokes on each of these. If installing with `pip` doesn't work, I recommend using the [Scipy Superpack](http://fonnesbeck.github.io/ScipySuperpack/) for Mac, or following the [SciPy Stack installation instructions](http://www.scipy.org/install.html) for Linux or Windows. For a heavier-weight but easy alternative, you can try [Anaconda](https://store.continuum.io/cshop/anaconda/).
 
 I recommend installing `git` as well.
 
