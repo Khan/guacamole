@@ -22,9 +22,6 @@ Example Use:
 
 Authors: Eliana Feasley, Jace Kohlmeier, Matt Faus, Jascha Sohl-Dickstein
 (2014)
-This software is made available under the Creative Commons
-Attribution-Noncommercial License.
-( http://creativecommons.org/licenses/by-nc/4.0/ )
 """
 import argparse
 import datetime
