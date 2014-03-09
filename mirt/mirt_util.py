@@ -109,14 +109,9 @@ class UserState(object):
         self.correct = np.asarray([line[idx_pl.correct] for line in lines]
                                   ).astype(int)
 
-        # Fill in time taken (we eventually take the log here.)
-        time_taken = np.asarray(
-            [line[idx_pl.time_taken] for line in lines]).astype(int)
-        # Set minimum time taken to 1
-        time_taken[time_taken < 1] = 1
-
-        # Set maximum time taken to argument sent in by caller
-        time_taken[time_taken > args.max_time_taken] = args.max_time_taken
+        # Fill in time taken
+        self.log_time_taken = get_normalized_time(np.asarray(
+            [line[idx_pl.time_taken] for line in lines]).astype(int))
 
         self.exercises = [line[idx_pl.exercise] for line in lines]
         self.exercise_ind = [exercise_ind_dict[ex] for ex in self.exercises]
@@ -129,7 +124,7 @@ class UserState(object):
         _, idx = np.unique(self.exercise_ind, return_index=True)
         self.exercise_ind = self.exercise_ind[idx]
         self.correct = self.correct[idx]
-        self.log_time_taken = np.log(time_taken[idx])
+        self.log_time_taken = self.log_time_taken[idx]
 
 
 def get_indexer(options):
@@ -618,6 +613,27 @@ class MirtModel(object):
                         self.theta.W_time[exercise_index, time_index]) + ',')
                 outfile.write(str(self.theta.sigma_time[exercise_index]) + ',')
                 outfile.write(exercise + '\n')
+
+
+def get_normalized_time(time, min_time=1, max_time=100, log_time=True):
+    """Normalize a time vector to reasonable values (as defined by the caller).
+
+    Input: A potentially messy vector of times taken
+
+    Output: A normalized vector (probably with the log taken)
+    """
+    # Get rid of infinite values
+    time[~np.isfinite(time)] = 1.
+
+    # Set minimum time
+    time[time < min_time] = min_time
+
+    # Set maximum time taken to argument sent in by caller
+    time[time > max_time] = max_time
+
+    if log_time:
+        time = np.log(time)
+    return time
 
 
 def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,

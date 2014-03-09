@@ -155,11 +155,7 @@ class MIRTEngine(engine.Engine):
 
         time_taken = lambda h: engine.ItemResponse(h).time_taken
         time_taken = np.asarray([time_taken(h) for h in history]).astype(float)
-        # deal with out of range or bad values for the response time
-        time_taken[~np.isfinite(time_taken)] = 1.
-        time_taken[time_taken < 1.] = 1.
-        time_taken[time_taken > self.max_time_taken] = self.max_time_taken
-        state.log_time_taken = np.log(time_taken)
+        state.log_time_taken = mirt_util.get_normalized_time(time_taken)
 
         state.abilities = self.abilities
 
