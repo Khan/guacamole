@@ -63,7 +63,11 @@ def generate_exercise_ind():
 
 def get_cmd_line_options(arguments=None):
     """Retreive user specified parameters"""
+    # TODO(eliana): Convert to argparse instead of optparse
     parser = optparse.OptionParser()
+    parser.add_option("--time", action="store_true",
+                      default=False,
+                      help=("Include time in the model."))
     parser.add_option("-a", "--num_abilities", type=int, default=1,
                       help=("Number of hidden ability units"))
     parser.add_option("-s", "--sampling_num_steps", type=int, default=200,
@@ -114,12 +118,9 @@ def get_cmd_line_options(arguments=None):
                             "feature and prediction data. Often used to "
                             "analyze accuracy of predictions after model "
                             "training."))
-    parser.add_option("-z", "--correct_only", action="store_true",
-                      default=True,
-                      help=("Ignore response time, only model using "
-                            "correctness."))
     parser.add_option("-r", "--resume_from_file", default='',
-                      help=("Name of a .npz file to bootstrap the couplings."))
+                      help=("Name of a json file to bootstrap the couplings."
+                            "WARNING: Not Fully Supported"))
     parser.add_option("-d", "--data_format", default='simple',
                       help=("The field indexer format of the input."))
 

@@ -90,7 +90,9 @@ def get_command_line_arguments(arguments=None):
         help="Number of problems to generate data for. Only meaningful when "
         "generating fake data - otherwise it's read from the data file.")
     parser.add_argument("-t", "--time", action="store_true",
-                        help=("Whether to include time as a parameter."))
+                        help=("Whether to include time as a parameter."
+                              "If you do not select time, the 'time' field"
+                              "in your data is ignored."))
     parser.add_argument(
         '-w', '--workers', type=int, default=1,
         help=("The number of processes to use to parallelize mirt training"))
@@ -195,10 +197,10 @@ def generate_model_with_parameters(arguments):
         '-w', str(arguments.workers),
         '-n', str(arguments.num_epochs),
         '-f', arguments.model_directory + 'train.responses',
-        '-o', out_dir_name
+        '-o', out_dir_name,
         ]
     if arguments.time:
-        mirt_train_params.append('-z')
+        mirt_train_params.append('--time')
 
     mirt_train_EM.run_programmatically(mirt_train_params)
 

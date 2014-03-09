@@ -71,7 +71,7 @@ class Response(object):
         self.item = item
         self.correct = correct
         # TODO(eliana): Actually implement time_taken
-        self.time_taken = 1
+        self.time_taken = int(random.random() * 20 + 1)
 
 
 class StudentAssessment(object):

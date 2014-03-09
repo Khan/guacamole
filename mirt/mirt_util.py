@@ -177,13 +177,13 @@ def conditional_energy_data(
     # TODO(jascha) - This code could be faster if abilities was stored with
     # the bias term, rather than having to repeatedly copy and concatenate the
     # bias in an inner loop.
-    # abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
-    # W_time = theta.W_time[exercises_ind, :]
-    # sigma_time = theta.sigma_time[exercises_ind]
-    # pred_time_taken = np.dot(W_time, abilities)
-    # err = pred_time_taken.ravel() - log_time_taken
-    # E_time_taken = (err.ravel() ** 2 / (2. * sigma_time.ravel() ** 2) +
-    #                 0.5 * np.log(sigma_time ** 2))
+    abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
+    W_time = theta.W_time[exercises_ind, :]
+    sigma_time = theta.sigma_time[exercises_ind]
+    pred_time_taken = np.dot(W_time, abilities)
+    err = pred_time_taken.ravel() - log_time_taken
+    E_time_taken = (err.ravel() ** 2 / (2. * sigma_time.ravel() ** 2) +
+                    0.5 * np.log(sigma_time ** 2))
     E_time_taken = 0
 
     E_observed = -np.log(p_data) + E_time_taken
@@ -345,7 +345,7 @@ def L_dL_singleuser(arg):
     L = -np.sum(np.log(pdata))
     dL.W_correct = -np.dot(dLdY, abilities.T)
 
-    if not options.correct_only:
+    if options.time:
         # calculate the probability of taking time response_time to answer
         log_time_taken = state['log_time_taken']
         # the abilities to time coupling parameters for this exercise
@@ -400,11 +400,12 @@ def L_dL(theta_flat, user_states, num_exercises, options, pool):
         Lu, dLu, exercise_indu = r
         L += Lu
         dL.W_correct[exercise_indu, :] += dLu.W_correct
-        if not options.correct_only:
+        if options.time:
             dL.W_time[exercise_indu, :] += dLu.W_time
             dL.sigma_time[exercise_indu] += dLu.sigma_time
 
-    if options.correct_only:
+    # TODO(eliana): Isn't this redundant?
+    if not options.time:
         dL.W_time[:, :] = 0.
         dL.sigma_time[:] = 0.
 
@@ -503,11 +504,11 @@ class MirtModel(object):
 
         self.theta = Parameters(self.options.num_abilities, self.num_exercises,
                                 vals=theta_flat)
-        if self.options.correct_only:
+        if not self.options.time:
             self.theta.sigma_time[:] = 1.
             self.theta.W_time[:, :] = 0.
 
-        # Print debugging info on the progress of the training
+        # debugging info on the progress of the training
         sys.stderr.write("M conditional log L %f, " % (-L))
         sys.stderr.write("reg penalty %f, " % (
             self.options.regularization * np.sum(theta_flat ** 2)))
