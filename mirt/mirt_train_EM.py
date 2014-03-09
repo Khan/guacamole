@@ -38,20 +38,10 @@ except ImportError:
     pass
 
 from mirt import mirt_util
-from train_util.model_training_util import FieldIndexer
 
 # num_exercises and generate_exercise_ind are used in the creation of a
 # defaultdict for mapping exercise names to an unique integer index
 num_exercises = 0
-
-
-def get_indexer(options):
-    """Generate an indexer describing the locations of fields within data."""
-    if options.data_format == 'simple':
-        idx_pl = FieldIndexer(FieldIndexer.simple_fields)
-    else:
-        idx_pl = FieldIndexer(FieldIndexer.plog_fields)
-    return idx_pl
 
 
 def generate_exercise_ind():
@@ -138,36 +128,6 @@ def get_cmd_line_options(arguments=None):
     return options
 
 
-def create_user_state(lines, exercise_ind_dict, options):
-    """Create a dictionary to hold training information for a single user."""
-    idx_pl = get_indexer(options)
-    correct = np.asarray([line[idx_pl.correct] for line in lines]
-                         ).astype(int)
-    time_taken = np.asarray([line[idx_pl.time_taken] for line in lines]
-                            ).astype(int)
-    time_taken[time_taken < 1] = 1
-    time_taken[time_taken > options.max_time_taken] = options.max_time_taken
-    exercises = [line[idx_pl.exercise] for line in lines]
-    exercises_ind = [exercise_ind_dict[ex] for ex in exercises]
-    exercises_ind = np.array(exercises_ind)
-    abilities = np.random.randn(options.num_abilities, 1)
-
-    # Cut out any duplicate exercises in the training data for a single user
-    # NOTE: if you allow duplicates, you need to change the way the gradient
-    # is computed as well.
-    _, idx = np.unique(exercises_ind, return_index=True)
-    exercises_ind = exercises_ind[idx]
-    correct = correct[idx]
-    time_taken = time_taken[idx]
-
-    state = {'correct': correct,
-             'log_time_taken': np.log(time_taken),
-             'abilities': abilities,
-             'exercises_ind': exercises_ind}
-
-    return state
-
-
 def emit_features(user_states, theta, options, split_desc):
     """Emit a CSV data file of correctness, prediction, and abilities."""
     f = open("%s_split=%s.csv" % (options.output, split_desc), 'w+')
@@ -176,17 +136,17 @@ def emit_features(user_states, theta, options, split_desc):
         abilities = np.zeros((options.num_abilities, 1))
         correct = user_state['correct']
         log_time_taken = user_state['log_time_taken']
-        exercises_ind = user_state['exercises_ind']
+        exercise_ind = user_state['exercise_ind']
 
         # NOTE: I currently do not output features for the first problem
         for i in xrange(1, correct.size):
 
             # TODO(jace) this should probably be the marginal estimation
             _, _, abilities, _ = mirt_util.sample_abilities_diffusion(
-                theta, exercises_ind[:i], correct[:i], log_time_taken[:i],
+                theta, exercise_ind[:i], correct[:i], log_time_taken[:i],
                 abilities_init=abilities, num_steps=200)
             prediction = mirt_util.conditional_probability_correct(
-                abilities, theta, exercises_ind[i:(i + 1)])
+                abilities, theta, exercise_ind[i:(i + 1)])
 
             f.write("%d, " % correct[i])
             f.write("%.4f, " % prediction[-1])
@@ -215,7 +175,7 @@ def get_data_from_file(options, exercise_ind_dict):
     user_states_train = []
     user_states_test = []
 
-    idx_pl = get_indexer(options)
+    idx_pl = mirt_util.get_indexer(options)
     sys.stderr.write("loading data")
     prev_user = None
     attempts = []
@@ -229,8 +189,9 @@ def get_data_from_file(options, exercise_ind_dict):
             if prev_user and user != prev_user and len(attempts) > 0:
                 # We're getting a new user, so perform the reduce operation
                 # on our previous user
-                user_states.append(create_user_state(
-                    attempts, exercise_ind_dict, options))
+                user_state = mirt_util.UserState()
+                user_state.add_data(attempts, exercise_ind_dict, options)
+                user_states.append(user_state)
                 attempts = []
 
             prev_user = user
@@ -240,9 +201,9 @@ def get_data_from_file(options, exercise_ind_dict):
 
         if len(attempts) > 0:
             # flush the data for the final user, too
-            user_states.append(create_user_state(
-                attempts, exercise_ind_dict, options))
-            attempts = []
+            user_state = mirt_util.UserState()
+            user_state.add_data(attempts, exercise_ind_dict, options)
+            user_states.append(user_state)
 
         fileinput.close()
         # Reset prev_user so we have equal user_states from each replica

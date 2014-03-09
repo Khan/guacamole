@@ -6,7 +6,7 @@ In this file:
 functions:
     sigmoid:
         compute sigmoid element-wise on an ndarray
-    get_exercises_ind:
+    get_exercise_ind:
         turn an array of exercise names into an array of indices within a
         matrix.
     conditional_probability_correct:
@@ -32,12 +32,12 @@ import multiprocessing
 import time
 
 from train_util.regression_util import sigmoid
+from train_util.model_training_util import FieldIndexer
 
 
 class Parameters(object):
-    """
-    Holds the parameters for a MIRT model.  Also used to hold the gradients
-    for each parameter during training.
+    """Hold the parameters for a MIRT model.  Also hold the gradients for each
+    parameter during training.
     """
     def __init__(self, num_abilities, num_exercises, vals=None,
                  exercise_ind_dict=None):
@@ -64,7 +64,7 @@ class Parameters(object):
             self.exercise_ind_dict = exercise_ind_dict
 
     def flat(self):
-        """Returns a concatenation of the parameters for saving."""
+        """Return a concatenation of the parameters for saving."""
         return np.concatenate((self.W_correct.ravel(), self.W_time.ravel(),
                                self.sigma_time.ravel()))
 
@@ -88,7 +88,60 @@ class Parameters(object):
         return self.W_correct[index]
 
 
-def get_exercises_ind(exercise_names, exercise_ind_dict):
+class UserState(object):
+    """The state of a user with training data
+
+    Includes abilities (a vector of ability estimate)
+    """
+
+    def __init__(self):
+        self.correct = None
+        self.log_time_taken = None
+        self.abilities = None
+        self.exercise_ind = None
+
+    def add_data(self, lines, exercise_ind_dict, args):
+        """Add provided by user to the object
+
+        TODO(eliana): Don't send in 'args' as an argument. That's terrible.
+        """
+        idx_pl = get_indexer(args)
+        self.correct = np.asarray([line[idx_pl.correct] for line in lines]
+                                  ).astype(int)
+
+        # Fill in time taken (we eventually take the log here.)
+        time_taken = np.asarray(
+            [line[idx_pl.time_taken] for line in lines]).astype(int)
+        # Set minimum time taken to 1
+        time_taken[time_taken < 1] = 1
+
+        # Set maximum time taken to argument sent in by caller
+        time_taken[time_taken > args.max_time_taken] = args.max_time_taken
+
+        self.exercises = [line[idx_pl.exercise] for line in lines]
+        self.exercise_ind = [exercise_ind_dict[ex] for ex in self.exercises]
+        self.exercise_ind = np.array(self.exercise_ind)
+        self.abilities = np.random.randn(args.num_abilities, 1)
+
+        # Cut out any duplicate exercises in the training data for a single
+        # user NOTE: if you allow duplicates, you need to change the way the
+        # gradient is computed as well.
+        _, idx = np.unique(self.exercise_ind, return_index=True)
+        self.exercise_ind = self.exercise_ind[idx]
+        self.correct = self.correct[idx]
+        self.log_time_taken = np.log(time_taken[idx])
+
+
+def get_indexer(options):
+    """Generate an indexer describing the locations of fields within data."""
+    if options.data_format == 'simple':
+        idx_pl = FieldIndexer(FieldIndexer.simple_fields)
+    else:
+        idx_pl = FieldIndexer(FieldIndexer.plog_fields)
+    return idx_pl
+
+
+def get_exercise_ind(exercise_names, exercise_ind_dict):
     """Turn an array of exercise names into an array of indices within the
     couplings parameter matrix
 
@@ -116,7 +169,7 @@ def get_exercises_ind(exercise_names, exercise_ind_dict):
     return inds
 
 
-def conditional_probability_correct(abilities, ex_parameters, exercises_ind):
+def conditional_probability_correct(abilities, ex_parameters, exercise_ind):
     """Predict the probabilities of getting questions correct for a set of
     exercise indices, given model parameters in couplings and the
     abilities vector for the user.
@@ -132,19 +185,19 @@ def conditional_probability_correct(abilities, ex_parameters, exercises_ind):
             Should be 1-d with shape = (# of exercises queried for)
 
     Returns:
-        An ndarray of floats with shape = (exercises_ind.size)
+        An ndarray of floats with shape = (exercise_ind.size)
     """
     # Pad the abilities vector with a 1 to act as a bias.
     # The shape of abilities will become (a+1, 1).
     abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
-    difficulties = ex_parameters.W_correct[exercises_ind, :]
+    difficulties = ex_parameters.W_correct[exercise_ind, :]
     Z = sigmoid(np.dot(difficulties, abilities))
     Z = np.reshape(Z, Z.size)  # flatten to 1-d ndarray
     return Z
 
 
 def conditional_energy_data(
-        abilities, theta, exercises_ind, correct, log_time_taken):
+        abilities, theta, exercise_ind, correct, log_time_taken):
     """Calculate the energy of the observed responses "correct" to
     exercises "exercises", conditioned on the abilities vector for a single
     user, and with MIRT parameters given in "couplings"
@@ -158,10 +211,10 @@ def conditional_energy_data(
             data in the 'correct' argument.  Should be 1-d with shape = (q),
             where q = the # of problem observations conditioned on.
         correct: A 1-d ndarray of integers with the same shape as
-            exercises_ind. The element values should equal 1 or 0 and
+            exercise_ind. The element values should equal 1 or 0 and
             represent an observed correct or incorrect answer, respectively.
             The elements of 'correct' correspond to the elements of
-            'exercises_ind' in the same position.
+            'exercise_ind' in the same position.
         log_time_taken: A 1-d ndarray similar to correct, but holding the
             log of the response time (in seconds) to answer each problem.
 
@@ -169,7 +222,7 @@ def conditional_energy_data(
         A 1-d ndarray of probabilities, with shape = (q)
     """
     # predicted probability correct
-    c_pred = conditional_probability_correct(abilities, theta, exercises_ind)
+    c_pred = conditional_probability_correct(abilities, theta, exercise_ind)
     # probability of actually observed sequence of responses
     p_data = c_pred * correct + (1 - c_pred) * (1 - correct)
 
@@ -178,8 +231,8 @@ def conditional_energy_data(
     # the bias term, rather than having to repeatedly copy and concatenate the
     # bias in an inner loop.
     abilities = np.append(abilities.copy(), np.ones((1, 1)), axis=0)
-    W_time = theta.W_time[exercises_ind, :]
-    sigma_time = theta.sigma_time[exercises_ind]
+    W_time = theta.W_time[exercise_ind, :]
+    sigma_time = theta.sigma_time[exercise_ind]
     pred_time_taken = np.dot(W_time, abilities)
     err = pred_time_taken.ravel() - log_time_taken
     E_time_taken = (err.ravel() ** 2 / (2. * sigma_time.ravel() ** 2) +
@@ -214,24 +267,17 @@ def sample_abilities_diffusion_wrapper(args):
     else:
         np.random.seed([time.time() * 1e9])
 
-    abilities = state['abilities']
-    correct = state['correct']
-    log_time_taken = state['log_time_taken']
-    exercises_ind = state['exercises_ind']
-
     num_steps = options.sampling_num_steps
 
     abilities, Eabilities, _, _ = sample_abilities_diffusion(
-        theta, exercises_ind, correct, log_time_taken,
-        abilities, num_steps)
+        theta, state, num_steps=num_steps)
 
     # TODO(jascha/eliana) returning mean abilities may lead to bias.
     # (eg, may push weights to be too large)  Investigate this
     return abilities, Eabilities, user_index
 
 
-def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
-                               abilities_init=None, num_steps=1,
+def sample_abilities_diffusion(theta, state, num_steps=200,
                                sampling_epsilon=.5):
     """Sample the ability vector for this user from the posterior over user
     ability conditioned on the observed exercise performance. Use
@@ -247,13 +293,13 @@ def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
             data in the 'correct' argument.  Should be 1-d with shape = (q),
             where q = the # of problem observations conditioned on.
         correct: A 1-d ndarray of integers with the same shape as
-            exercises_ind. The element values should equal 1 or 0 and
+            exercise_ind. The element values should equal 1 or 0 and
             represent an observed correct or incorrect answer, respectively.
             The elements of 'correct' correspond to the elements of
-            'exercises_ind' in the same position.
+            'exercise_ind' in the same position.
         log_time_taken: A 1-d ndarray of floats with the same shape as
-            exercises_ind. The element values are the log of the response
-            time.  The elements correspond to the elements of 'exercises_ind'
+            exercise_ind. The element values are the log of the response
+            time.  The elements correspond to the elements of 'exercise_ind'
             in the same position.
         abilities_init: None, or an ndarray of shape (a, 1) representing
             a desired initialization of the abilities in the sampling chain.
@@ -267,6 +313,11 @@ def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
         3: The mean of the abilities vectors in the entire chain.
         4: The standard deviation of the abilities vectors in the entire chain.
     """
+
+    abilities_init = state.abilities
+    correct = state.correct
+    log_time_taken = state.log_time_taken
+    exercise_ind = state.exercise_ind
     # TODO -- this would run faster with something like an HMC sampler
     # initialize abilities using prior
     if abilities_init is None:
@@ -277,7 +328,7 @@ def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
     # calculate the energy for the initialization state
     E_abilities = 0.5 * np.dot(abilities.T, abilities) + np.sum(
         conditional_energy_data(
-            abilities, theta, exercises_ind, correct, log_time_taken))
+            abilities, theta, exercise_ind, correct, log_time_taken))
 
     sample_chain = []
     for _ in range(num_steps):
@@ -287,7 +338,7 @@ def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
 
         E_proposal = 0.5 * np.dot(proposal.T, proposal) + np.sum(
             conditional_energy_data(
-                proposal, theta, exercises_ind, correct, log_time_taken))
+                proposal, theta, exercise_ind, correct, log_time_taken))
 
         # probability of accepting proposal
         if E_abilities - E_proposal > 0.:
@@ -319,12 +370,11 @@ def sample_abilities_diffusion(theta, exercises_ind, correct, log_time_taken,
 
 def L_dL_singleuser(arg):
     """Calculate log likelihood and gradient wrt couplings of mIRT model
-       for single user """
+       for single user
+    """
     theta, state, options = arg
 
-    abilities = state['abilities'].copy()
-    correct = state['correct']
-    exercises_ind = state['exercises_ind']
+    abilities = state.abilities.copy()
 
     dL = Parameters(theta.num_abilities, theta.num_exercises)
 
@@ -333,12 +383,12 @@ def L_dL_singleuser(arg):
                           np.ones((1, abilities.shape[1])),
                           axis=0)
     # the abilities to exercise coupling parameters for this exercise
-    W_correct = theta.W_correct[exercises_ind, :]
+    W_correct = theta.W_correct[state.exercise_ind, :]
 
     # calculate the probability of getting a question in this exercise correct
     Y = np.dot(W_correct, abilities)
     Z = sigmoid(Y)  # predicted correctness value
-    Zt = correct.reshape(Z.shape)  # true correctness value
+    Zt = state.correct.reshape(Z.shape)  # true correctness value
     pdata = Zt * Z + (1. - Zt) * (1. - Z)  # = 2*Zt*Z - Z + const
     dLdY = ((2. * Zt - 1.) * Z * (1. - Z)) / pdata
 
@@ -347,12 +397,11 @@ def L_dL_singleuser(arg):
 
     if options.time:
         # calculate the probability of taking time response_time to answer
-        log_time_taken = state['log_time_taken']
         # the abilities to time coupling parameters for this exercise
-        W_time = theta.W_time[exercises_ind, :]
-        sigma = theta.sigma_time[exercises_ind].reshape((-1, 1))
+        W_time = theta.W_time[state.exercise_ind, :]
+        sigma = theta.sigma_time[state.exercise_ind].reshape((-1, 1))
         Y = np.dot(W_time, abilities)
-        err = (Y - log_time_taken.reshape((-1, 1)))
+        err = (Y - state.log_time_taken.reshape((-1, 1)))
         L += np.sum(err ** 2 / sigma ** 2) / 2.
         dLdY = err / sigma ** 2
 
@@ -363,7 +412,7 @@ def L_dL_singleuser(arg):
         L += np.sum(0.5 * np.log(sigma ** 2))
         dL.sigma_time += 1. / sigma.ravel()
 
-    return L, dL, exercises_ind
+    return L, dL, state.exercise_ind
 
 
 def L_dL(theta_flat, user_states, num_exercises, options, pool):
@@ -475,7 +524,7 @@ class MirtModel(object):
         results = self.get_sampling_results()
         for result in results:
             abilities, El, ind = result
-            self.user_states[ind]['abilities'] = abilities.copy()
+            self.user_states[ind].abilities = abilities.copy()
             average_energy += El / float(len(self.user_states))
 
         sys.stderr.write("E joint log L + const %f, " % (
@@ -485,8 +534,8 @@ class MirtModel(object):
         mn_a = 0.
         cov_a = 0.
         for state in self.user_states:
-            mn_a += state['abilities'][:, 0].T / float(len(self.user_states))
-            cov_a += (state['abilities'][:, 0] ** 2).T / (
+            mn_a += state.abilities[:, 0].T / float(len(self.user_states))
+            cov_a += (state.abilities[:, 0] ** 2).T / (
                 float(len(self.user_states)))
         sys.stderr.write("<abilities> " + str(mn_a))
         sys.stderr.write(", <abilities^2>" + str(cov_a) + ", ")
@@ -527,7 +576,7 @@ class MirtModel(object):
         self.theta.W_correct[:, :-1] *= coupling_sign
         self.theta.W_time[:, :-1] *= coupling_sign
         for user_state in self.user_states:
-            user_state['abilities'] *= coupling_sign.T
+            user_state.abilities *= coupling_sign.T
 
         # save state as a .npz
         data_to_json(

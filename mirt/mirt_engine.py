@@ -68,7 +68,7 @@ class MIRTEngine(engine.Engine):
         if update_abilities:
             self._update_abilities(history, ignore_analytics=ignore_analytics)
         try:
-            exercise_ind = mirt_util.get_exercises_ind(
+            exercise_ind = mirt_util.get_exercise_ind(
                 exercise_name, self.exercise_ind_dict)
         except KeyError:
             # If we don't have this exercise, predict the mean predicted
@@ -137,17 +137,21 @@ class MIRTEngine(engine.Engine):
         # If ignore_analytics is true, only learn from non-analytics cards
         # This is to evaluate the quality of various models for predicting
         # the analytics card.
+
+        state = mirt_util.UserState()
+
         if history and ignore_analytics:
             history = [
                 h for h in history if h['metadata'] and
                 not h['metadata'].get('analytics')]
         ex = lambda h: engine.ItemResponse(h).exercise
         exercises = np.asarray([ex(h) for h in history])
-        exercises_ind = mirt_util.get_exercises_ind(
+        state.exercise_ind = mirt_util.get_exercise_ind(
             exercises, self.exercise_ind_dict)
 
         is_correct = lambda h: engine.ItemResponse(h).correct
-        correct = np.asarray([is_correct(h) for h in history]).astype(int)
+        state.correct = np.asarray(
+            [is_correct(h) for h in history]).astype(int)
 
         time_taken = lambda h: engine.ItemResponse(h).time_taken
         time_taken = np.asarray([time_taken(h) for h in history]).astype(float)
@@ -155,12 +159,13 @@ class MIRTEngine(engine.Engine):
         time_taken[~np.isfinite(time_taken)] = 1.
         time_taken[time_taken < 1.] = 1.
         time_taken[time_taken > self.max_time_taken] = self.max_time_taken
-        log_time_taken = np.log(time_taken)
+        state.log_time_taken = np.log(time_taken)
+
+        state.abilities = self.abilities
 
         sample_abilities, _, mean_abilities, stdev = (
             mirt_util.sample_abilities_diffusion(
-                self.theta, exercises_ind, correct, log_time_taken,
-                self.abilities, num_steps=num_steps))
+                self.theta, state, num_steps=num_steps))
 
         self.abilities = mean_abilities  # if use_mean else sample_abilities
         self.abilities_stdev = stdev
