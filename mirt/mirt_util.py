@@ -56,9 +56,6 @@ class Parameters(object):
             # the couplings to time taken (+1 for bias unit)
             self.W_time = vals[num_couplings:2 * num_couplings].copy().reshape(
                 (-1, num_abilities + 1))
-            print "vals", vals
-            print "len of vals", len(vals)
-            print "num_couplings", num_couplings
             # the standard deviation for the response time Gaussian
             self.sigma_time = vals[2 * num_couplings:].reshape((-1))
             self.exercise_ind_dict = exercise_ind_dict
