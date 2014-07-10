@@ -4,8 +4,6 @@ datastructures.
 In this file:
 
 functions:
-    sigmoid:
-        compute sigmoid element-wise on an ndarray
     get_exercise_ind:
         turn an array of exercise names into an array of indices within a
         matrix.
@@ -23,7 +21,6 @@ class Parameters, which holds parameters for a MIRT model.
 
 """
 import json
-from multiprocessing import Pool
 import numpy as np
 import scipy
 import sys
@@ -485,7 +482,7 @@ class MirtModel(object):
         self.num_exercises = num_exercises
         self.pool = None
         if options.workers > 1:
-            self.pool = Pool(options.workers)
+            self.pool = multiprocessing.Pool(options.workers)
         self.options = options
         self.exercise_ind_dict = exercise_ind_dict
         self.user_states = user_states
