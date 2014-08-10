@@ -85,7 +85,11 @@ class MIRTEngine(engine.Engine):
         # use lots of steps when estimating score to make
         # the score seem close to deterministic
         self._update_abilities(history, num_steps=2000)
-        return np.mean(self.abilities)
+        predicted_accuracies = np.asarray([
+            self.estimated_exercise_accuracy(history, ex, False)
+            for ex in self.exercises()], dtype=float)
+
+        return np.mean(predicted_accuracies)
 
     def readable_score(self, history):
         """Return the score formatted as a percent"""
