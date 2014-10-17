@@ -16,6 +16,7 @@ import sys
 
 import mirt.engine
 import mirt.mirt_engine
+import mirt.frontier_engine
 import mirt.mirt_util
 
 
@@ -82,7 +83,7 @@ def main(model_file, num_exercises):
         will be.
     """
     data = mirt.mirt_util.json_to_data(model_file)
-    engine = TestEngine(mirt.mirt_engine.MIRTEngine(data))
+    engine = TestEngine(mirt.frontier_engine.FrontierEngine(data))
     engine.interactive_test(num_exercises=num_exercises)
     engine.print_outcome()
 

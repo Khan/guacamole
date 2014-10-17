@@ -5,13 +5,14 @@ import random
 
 import mirt.mirt_util
 import mirt.engine
+import mirt.frontier_engine
 import mirt.mirt_engine
 from train_util.model_training_util import FieldIndexer
 
 
 def load_and_simulate_assessment(
         json_filepath, roc_filepath, test_filepath, data_format='simple',
-        evaluation_item_index=None):
+        evaluation_item_index=None, engine='mirt'):
     """Loads a json mirt file and a test file with assessments to evaluate.
 
     Some questions are marked as evaluation items, and these items are held
@@ -69,9 +70,12 @@ def load_and_simulate_assessment(
     # each user.
     with open(roc_filepath, 'w') as outfile, \
             open(test_filepath, 'r') as test_data:
-
+        print roc_filepath
         user = ''
-        model = mirt.mirt_engine.MIRTEngine(params)
+        if engine == 'mirt':
+            model = mirt.mirt_engine.MIRTEngine(params)
+        else:
+            model = mirt.frontier_engine.FrontierEngine(params)
         history = []
         evaluation_indexes = []
         model.only_live_exercises = False

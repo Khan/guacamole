@@ -120,6 +120,10 @@ def get_command_line_arguments(arguments=None):
     parser.add_argument(
         "-i", "--items", type=int, default=5, help=(
             "Number of items to use in adaptive test."))
+    parser.add_argument(
+        "-e", "--engine", type=str, default='mirt', help=(
+            "Engine type to use when evaluating. Currently only mirt or "
+            "frontier. Defaults to mirt."))
 
     if arguments:
         arguments = parser.parse_args(arguments)
@@ -211,7 +215,7 @@ def generate_roc_curve_from_model(arguments):
     roc_file = roc_dir + arguments.datetime
     test_file = arguments.model_directory + 'test.responses'
     return generate_predictions.load_and_simulate_assessment(
-        arguments.model, roc_file, test_file)
+        arguments.model, roc_file, test_file, engine=arguments.engine)
 
 
 def run_with_arguments(arguments):
