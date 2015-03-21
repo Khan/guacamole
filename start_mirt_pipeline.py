@@ -126,6 +126,16 @@ def get_command_line_arguments(arguments=None):
     else:
         arguments = parser.parse_args()
 
+    # Support file paths in the form of "~/blah", which python
+    # doesn't normally recognise
+    if arguments.data_file:
+        arguments.data_file = os.path.expanduser(arguments.data_file)
+    if arguments.model_directory:
+        arguments.model_directory = os.path.expanduser(
+                arguments.model_directory)
+    if arguments.model:
+        arguments.model = os.path.expanduser(arguments.model)
+
     # When visualize is true, we do all visualizations
     if arguments.visualize:
         arguments.roc_viz = True

@@ -634,8 +634,8 @@ def get_normalized_time(time, min_time=1, max_time=100, log_time=True):
 
 
 def data_to_json(theta, exercise_ind_dict, max_time_taken, outfilename,
-                 slug='Test', title='test parameters', description='parameters'
-                 'for an adaptive test'):
+                 slug='Test', title='test parameters',
+                 description='parameters for an adaptive test'):
     """Convert a set of mirt parameters into a json file and write it"""
 
     out_data = {
