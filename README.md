@@ -113,7 +113,7 @@ This prints out a formatted view of your exercises.
                         understanding_decimals_place_value  0.8695      0.0884
     understanding-multiplying-fractions-and-whole-numbers   0.9794      0.1425
 
-For more information on what these mean, check out the presentation.
+For more information on what these terms mean, check out [IRT on Wikipedia](https://en.wikipedia.org/wiki/Item_response_theory).
 
 ####ROC Curve
 An [ROC curve](http://en.wikipedia.org/wiki/Receiver_operating_characteristic) is a simple way of comparing models for predictive accuracy when there are binary classifications. When we train a model, we hold out a test set, and the ROC goes through that set of assessment and makes predictions about the accuracy of users on random questions. To see a ROC curve, run
