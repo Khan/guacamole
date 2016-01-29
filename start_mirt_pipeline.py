@@ -152,7 +152,8 @@ def get_command_line_arguments(arguments=None):
         parser.print_help()
 
     # Save the current time for reference when looking at generated models.
-    arguments.datetime = str(datetime.datetime.now())
+    DATE_FORMAT = '%Y-%m-%d-%H-%M-%S'
+    arguments.datetime = str(datetime.datetime.now().strftime(DATE_FORMAT))
 
     return arguments
 
